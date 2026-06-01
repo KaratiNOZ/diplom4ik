@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<!-- АИС стоматологической клиники -->
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ORDENTIST CLINIC — современная стоматология. Запись на приём, опытные врачи, доступные цены.">
+
+    <title>ORDENTIST CLINIC — Добро пожаловать</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/about.css">
+</head>
+<body>
+
+    <!-- ===== SVG-спрайт с иконками (lucide-style, MIT) ===== -->
+    <svg class="icon-sprite" aria-hidden="true">
+        <defs>
+            <!-- tooth: фирменная иконка зуба -->
+            <symbol id="i-tooth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.5c-2.5 0-4 1-5.5 1S3 2.5 3 6c0 3 1 4.5 1.5 7s.5 7 2 7 1.5-3 2.5-5 1-2.5 3-2.5 2 .5 3 2.5 1 5 2.5 5 1.5-4.5 2-7S21 9 21 6c0-3.5-2-2.5-3.5-2.5S14.5 2.5 12 2.5z"/>
+            </symbol>
+            <!-- map pin -->
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </symbol>
+            <!-- phone -->
+            <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/>
+            </symbol>
+            <!-- clock -->
+            <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </symbol>
+            <!-- shield-check: гарантия -->
+            <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <polyline points="9 12 11 14 15 10"/>
+            </symbol>
+            <!-- award -->
+            <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="6"/>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+            </symbol>
+            <!-- heart: безболезненно/забота -->
+            <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </symbol>
+            <!-- microscope/tech: оборудование -->
+            <symbol id="i-tech" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="14" rx="2"/>
+                <path d="M7 21h10M9 17v4M15 17v4"/>
+                <path d="M8 9l3 3 5-5"/>
+            </symbol>
+            <!-- sparkles: отбеливание -->
+            <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>
+                <path d="M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>
+            </symbol>
+            <!-- baby: детская стоматология -->
+            <symbol id="i-baby" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 12h.01M15 12h.01"/>
+                <path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/>
+                <path d="M17 8a2 2 0 0 0-2-2"/>
+                <circle cx="12" cy="12" r="10"/>
+            </symbol>
+            <!-- scalpel: хирургия -->
+            <symbol id="i-scalpel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 4l6 6-9 9H5v-6l9-9z"/>
+                <path d="M14 4l3 3"/>
+            </symbol>
+            <!-- braces: ортодонтия -->
+            <symbol id="i-braces" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h18"/>
+                <rect x="5" y="9" width="3" height="6" rx="0.5"/>
+                <rect x="10.5" y="9" width="3" height="6" rx="0.5"/>
+                <rect x="16" y="9" width="3" height="6" rx="0.5"/>
+            </symbol>
+            <!-- star -->
+            <symbol id="i-star" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/>
+            </symbol>
+            <!-- arrow-right -->
+            <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+            </symbol>
+            <!-- chevron-left/right (для карусели) -->
+            <symbol id="i-chev-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </symbol>
+            <symbol id="i-chev-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <header class="site-header">
+        <div class="header-top">
+            <section class="header-section-logo">
+                <img src="/images/logo/logo.png" alt="Логотип ORDENTIST CLINIC"/>
+                <h1>ORDENTIST CLINIC</h1>
+            </section>
+
+            <p class="slogan">ВАШИ ЗУБЫ — НАША ЗАБОТА</p>
+
+            <div class="contacts">
+                <p><svg class="icon-xs"><use href="#i-pin"/></svg> Ул. Восстания, 95</p>
+                <p><svg class="icon-xs"><use href="#i-phone"/></svg> +7 (999) 324-54-54</p>
+                <p><svg class="icon-xs"><use href="#i-clock"/></svg> Пн–Пт 08:00–20:00 · Сб 08:00–18:00</p>
+            </div>
+        </div>
+
+        <nav class="main-nav">
+            <a href="#appointment" class="nav-cta">Записаться</a>
+            <a href="#services">Услуги</a>
+            <a href="#doctors">Врачи</a>
+            <a href="#reviews">Отзывы</a>
+            <a href="#branches">Филиалы</a>
+            <a href="/prices">Цены</a>
+            <a href="#about">О нас</a>
+
+            <span class="nav-divider"></span>
+
+            <a href="/login" class="nav-auth">
+                <svg class="icon-sm"><use href="#i-user"/></svg>
+                Войти
+            </a>
+            <a href="/register" class="nav-auth nav-auth-primary">Регистрация</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <span class="hero-badge"><svg class="icon-xs"><use href="#i-star"/></svg> Стоматология №1 в городе</span>
+                <h2>Здоровая улыбка<br>начинается здесь</h2>
+                <p>Современное оборудование, опытные специалисты и забота о каждом пациенте.</p>
+                <div class="hero-actions">
+                    <a href="#appointment" class="btn btn-primary">
+                        Записаться на приём
+                        <svg class="icon-sm"><use href="#i-arrow"/></svg>
+                    </a>
+                    <a href="#services" class="btn btn-ghost">Узнать цены</a>
+                </div>
+                <div class="hero-stats">
+                    <div><strong>15+</strong><span>лет опыта</span></div>
+                    <div><strong>10 000+</strong><span>пациентов</span></div>
+                    <div><strong>4.9</strong><span>★ рейтинг</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Услуги -->
+        <section class="services" id="services">
+            <div class="section-header">
+                <h2 class="section-title">Наши услуги</h2>
+                <p class="section-subtitle">Полный спектр стоматологических услуг для всей семьи</p>
+            </div>
+
+            <div class="services-grid">
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-tooth"/></svg></div>
+                    <h3>Терапия</h3>
+                    <p>Лечение кариеса, пульпита и периодонтита под микроскопом.</p>
+                    <span class="service-price">от 2 500 ₽</span>
+                </article>
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-scalpel"/></svg></div>
+                    <h3>Имплантация</h3>
+                    <p>Восстановление зубов имплантами премиум-систем с гарантией.</p>
+                    <span class="service-price">от 35 000 ₽</span>
+                </article>
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-braces"/></svg></div>
+                    <h3>Ортодонтия</h3>
+                    <p>Брекет-системы и элайнеры для идеального прикуса.</p>
+                    <span class="service-price">от 80 000 ₽</span>
+                </article>
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-sparkle"/></svg></div>
+                    <h3>Отбеливание</h3>
+                    <p>Профессиональное отбеливание Zoom — на 8 тонов светлее.</p>
+                    <span class="service-price">от 15 000 ₽</span>
+                </article>
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-baby"/></svg></div>
+                    <h3>Детская стоматология</h3>
+                    <p>Бережное лечение в игровой атмосфере без страха и боли.</p>
+                    <span class="service-price">от 1 800 ₽</span>
+                </article>
+                <article class="service-card">
+                    <div class="service-icon"><svg><use href="#i-shield"/></svg></div>
+                    <h3>Гигиена и профилактика</h3>
+                    <p>Чистка Air Flow и ультразвук — снимает камень и налёт.</p>
+                    <span class="service-price">от 4 500 ₽</span>
+                </article>
+            </div>
+        </section>
+
+        <!-- Преимущества -->
+        <section class="features">
+            <div class="section-header">
+                <h2 class="section-title">Почему выбирают нас</h2>
+                <p class="section-subtitle">Мы делаем поход к стоматологу комфортным и безопасным</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon"><svg><use href="#i-tech"/></svg></div>
+                    <h3>Современное оборудование</h3>
+                    <p>Лечение под микроскопом, цифровая 3D-диагностика, лазерные технологии.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><svg><use href="#i-award"/></svg></div>
+                    <h3>Опытные врачи</h3>
+                    <p>Команда специалистов со стажем 8+ лет и регулярным повышением квалификации.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><svg><use href="#i-heart"/></svg></div>
+                    <h3>Без боли и страха</h3>
+                    <p>Современная анестезия, седация и индивидуальный подход к каждому пациенту.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><svg><use href="#i-shield"/></svg></div>
+                    <h3>Гарантия на работы</h3>
+                    <p>Официальная гарантия до 5 лет на все виды лечения и протезирования.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Врачи -->
+        <section class="doctors" id="doctors">
+            <div class="section-header">
+                <h2 class="section-title">Наши врачи</h2>
+                <p class="section-subtitle">Команда специалистов, которым доверяют тысячи пациентов</p>
+            </div>
+
+            <div class="carousel" data-carousel>
+                <button class="carousel-btn carousel-btn-prev" data-carousel-prev aria-label="Назад">
+                    <svg><use href="#i-chev-left"/></svg>
+                </button>
+
+                <div class="carousel-viewport" data-carousel-viewport>
+                    <div class="carousel-track" data-carousel-track>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_2.png" alt="Иванов И. И.">
+                            <h3>Иванов И. И.</h3>
+                            <p class="role">Стоматолог-терапевт</p>
+                            <p class="exp">Стаж 12 лет</p>
+                        </article>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_1.png" alt="Петрова А. С.">
+                            <h3>Петрова А. С.</h3>
+                            <p class="role">Ортодонт</p>
+                            <p class="exp">Стаж 9 лет</p>
+                        </article>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_2.png" alt="Сидоров Д. М.">
+                            <h3>Сидоров Д. М.</h3>
+                            <p class="role">Хирург-имплантолог</p>
+                            <p class="exp">Стаж 15 лет</p>
+                        </article>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_1.png" alt="Кузнецова Е. В.">
+                            <h3>Кузнецова Е. В.</h3>
+                            <p class="role">Детский стоматолог</p>
+                            <p class="exp">Стаж 7 лет</p>
+                        </article>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_2.png" alt="Морозов А. П.">
+                            <h3>Морозов А. П.</h3>
+                            <p class="role">Стоматолог-ортопед</p>
+                            <p class="exp">Стаж 11 лет</p>
+                        </article>
+                        <article class="doctor-card carousel-slide">
+                            <img src="/images/doctors/doctor_1.png" alt="Волкова Н. И.">
+                            <h3>Волкова Н. И.</h3>
+                            <p class="role">Пародонтолог</p>
+                            <p class="exp">Стаж 8 лет</p>
+                        </article>
+                    </div>
+                </div>
+
+                <button class="carousel-btn carousel-btn-next" data-carousel-next aria-label="Вперёд">
+                    <svg><use href="#i-chev-right"/></svg>
+                </button>
+
+                <div class="carousel-dots" data-carousel-dots></div>
+            </div>
+        </section>
+
+        <!-- Отзывы -->
+        <section class="reviews" id="reviews">
+            <div class="section-header">
+                <h2 class="section-title">Отзывы пациентов</h2>
+                <p class="section-subtitle">Более 2 000 положительных отзывов</p>
+            </div>
+
+            <div class="reviews-grid">
+                <article class="review-card">
+                    <div class="review-stars">
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg>
+                    </div>
+                    <p class="review-text">«Лечила зубы у Иванова И. И. — впервые без страха! Аккуратно, чисто, без боли. Цены адекватные, врачи внимательные.»</p>
+                    <div class="review-author">
+                        <strong>Анна К.</strong>
+                        <span>Лечение кариеса</span>
+                    </div>
+                </article>
+                <article class="review-card">
+                    <div class="review-stars">
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg>
+                    </div>
+                    <p class="review-text">«Поставил импланты — всё прошло идеально. Сидоров — настоящий профессионал. Год спустя ноль нареканий.»</p>
+                    <div class="review-author">
+                        <strong>Дмитрий В.</strong>
+                        <span>Имплантация</span>
+                    </div>
+                </article>
+                <article class="review-card">
+                    <div class="review-stars">
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg>
+                        <svg><use href="#i-star"/></svg>
+                    </div>
+                    <p class="review-text">«Привожу сюда сына 5 лет — он сам просится! Кузнецова умеет найти подход к ребёнку, никаких слёз.»</p>
+                    <div class="review-author">
+                        <strong>Мария Л.</strong>
+                        <span>Детская стоматология</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Филиалы -->
+        <section class="our-branches" id="branches">
+            <div class="section-header">
+                <h2 class="section-title">Наши филиалы</h2>
+                <p class="section-subtitle">Удобное расположение в каждом районе</p>
+            </div>
+
+            <div class="carousel" data-carousel>
+                <button class="carousel-btn carousel-btn-prev" data-carousel-prev aria-label="Назад">
+                    <svg><use href="#i-chev-left"/></svg>
+                </button>
+
+                <div class="carousel-viewport" data-carousel-viewport>
+                    <div class="carousel-track" data-carousel-track>
+                        <article class="branch-card carousel-slide">
+                            <h3>Центральный</h3>
+                            <p><svg class="icon-sm"><use href="#i-pin"/></svg> Ул. Восстания, 95</p>
+                            <p><svg class="icon-sm"><use href="#i-phone"/></svg> +7 (999) 324-54-54</p>
+                            <p><svg class="icon-sm"><use href="#i-clock"/></svg> Пн–Пт 08:00–20:00</p>
+                        </article>
+                        <article class="branch-card carousel-slide">
+                            <h3>Северный</h3>
+                            <p><svg class="icon-sm"><use href="#i-pin"/></svg> Пр. Просвещения, 12</p>
+                            <p><svg class="icon-sm"><use href="#i-phone"/></svg> +7 (999) 324-54-55</p>
+                            <p><svg class="icon-sm"><use href="#i-clock"/></svg> Пн–Сб 09:00–21:00</p>
+                        </article>
+                        <article class="branch-card carousel-slide">
+                            <h3>Южный</h3>
+                            <p><svg class="icon-sm"><use href="#i-pin"/></svg> Ул. Ленина, 48</p>
+                            <p><svg class="icon-sm"><use href="#i-phone"/></svg> +7 (999) 324-54-56</p>
+                            <p><svg class="icon-sm"><use href="#i-clock"/></svg> Пн–Пт 08:00–19:00</p>
+                        </article>
+                        <article class="branch-card carousel-slide">
+                            <h3>Западный</h3>
+                            <p><svg class="icon-sm"><use href="#i-pin"/></svg> Ул. Морская, 7</p>
+                            <p><svg class="icon-sm"><use href="#i-phone"/></svg> +7 (999) 324-54-57</p>
+                            <p><svg class="icon-sm"><use href="#i-clock"/></svg> Пн–Сб 09:00–20:00</p>
+                        </article>
+                    </div>
+                </div>
+
+                <button class="carousel-btn carousel-btn-next" data-carousel-next aria-label="Вперёд">
+                    <svg><use href="#i-chev-right"/></svg>
+                </button>
+
+                <div class="carousel-dots" data-carousel-dots></div>
+            </div>
+        </section>
+
+        <!-- О нас (краткая версия) -->
+        <section class="about-preview" id="about">
+            <div class="about-preview-inner">
+                <div class="about-preview-text">
+                    <span class="about-badge">О клинике</span>
+                    <h2>ORDENTIST CLINIC — стоматология, которой доверяют</h2>
+                    <p>Мы работаем с 2009 года и за это время помогли более 10 000 пациентам обрести здоровую улыбку. Наша миссия — сделать качественную стоматологическую помощь доступной и комфортной для каждого.</p>
+                    <ul class="about-facts">
+                        <li><strong>2009</strong><span>год основания</span></li>
+                        <li><strong>14</strong><span>врачей-специалистов</span></li>
+                        <li><strong>4</strong><span>филиала в городе</span></li>
+                        <li><strong>5 лет</strong><span>гарантия на работы</span></li>
+                    </ul>
+                    <a href="/about" class="btn btn-primary" style="margin-top:8px;">
+                        Показать больше
+                        <svg class="icon-sm"><use href="#i-arrow"/></svg>
+                    </a>
+                </div>
+                <div class="about-preview-cards">
+                    <div class="about-card">
+                        <div class="about-card-icon"><svg><use href="#i-award"/></svg></div>
+                        <h4>Лицензированная клиника</h4>
+                        <p>Все виды деятельности лицензированы Министерством здравоохранения.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card-icon"><svg><use href="#i-tech"/></svg></div>
+                        <h4>Цифровые технологии</h4>
+                        <p>3D-томография, CAD/CAM протезирование, лазерное лечение.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card-icon"><svg><use href="#i-heart"/></svg></div>
+                        <h4>Забота о пациенте</h4>
+                        <p>Индивидуальный подход, комфортная атмосфера, работа без боли.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card-icon"><svg><use href="#i-shield"/></svg></div>
+                        <h4>Гарантия качества</h4>
+                        <p>Официальная гарантия на все виды лечения и протезирования.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Запись на приём -->
+        <section class="appointment" id="appointment">
+            <div class="appointment-inner">
+                <div class="appointment-text">
+                    <h2>Запишитесь на приём</h2>
+                    <p>Оставьте заявку и наш администратор перезвонит в течение 5 минут, чтобы подобрать удобное время.</p>
+                    <ul class="appointment-list">
+                        <li><svg class="icon-sm"><use href="#i-shield"/></svg> Бесплатная консультация</li>
+                        <li><svg class="icon-sm"><use href="#i-clock"/></svg> Приём в день обращения</li>
+                        <li><svg class="icon-sm"><use href="#i-heart"/></svg> Индивидуальный подход</li>
+                    </ul>
+                </div>
+
+                <form class="appointment-form" onsubmit="event.preventDefault(); alert('Спасибо! Мы свяжемся с вами.');">
+                    <label>
+                        <span>Имя</span>
+                        <input type="text" name="name" placeholder="Как к вам обращаться?" required>
+                    </label>
+                    <label>
+                        <span>Телефон</span>
+                        <input type="tel" name="phone" placeholder="+7 (___) ___-__-__" required>
+                    </label>
+                    <label>
+                        <span>Услуга</span>
+                        <select name="service">
+                            <option>Консультация</option>
+                            <option>Терапия</option>
+                            <option>Имплантация</option>
+                            <option>Ортодонтия</option>
+                            <option>Отбеливание</option>
+                            <option>Детская стоматология</option>
+                            <option>Гигиена</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-primary">
+                        Отправить заявку
+                        <svg class="icon-sm"><use href="#i-arrow"/></svg>
+                    </button>
+                    <p class="appointment-note">Нажимая кнопку, вы соглашаетесь с обработкой персональных данных.</p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <h4>© 2026 ORDENTIST CLINIC</h4>
+            <div class="footer-links">
+                <p>Все права защищены.</p>
+                <a href="#">Политика конфиденциальности</a>
+                <a href="#">Пользовательское соглашение</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/carousel.js"></script>
+</body>
+</html>

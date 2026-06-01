@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ code|default(404) }} — ORDENTIST CLINIC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 30% 30%, rgba(43,182,115,0.12), transparent 55%),
+                        radial-gradient(circle at 80% 80%, rgba(74,204,139,0.08), transparent 55%),
+                        var(--color-bg);
+            text-align: center; padding: 40px 20px;
+        }
+        .error-inner { max-width: 520px; }
+        .error-code {
+            font-size: 120px; font-weight: 800; line-height: 1;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin: 0 0 8px;
+        }
+        .error-title { font-size: 28px; font-weight: 700; margin: 0 0 12px; }
+        .error-text  { color: var(--color-muted); font-size: 15px; margin: 0 0 36px; line-height: 1.6; }
+        .error-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<div class="error-page">
+    <div class="error-inner">
+        <div class="error-code">{{ code|default(404) }}</div>
+        <h1 class="error-title">
+            {% if code == 403 %}Доступ запрещён
+            {% else %}Страница не найдена{% endif %}
+        </h1>
+        <p class="error-text">
+            {% if message %}{{ message }}
+            {% elif code == 403 %}У вас нет прав для просмотра этой страницы.
+            {% else %}Страница, которую вы ищете, не существует или была перемещена.{% endif %}
+        </p>
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">На главную</a>
+            <a href="javascript:history.back()" class="btn btn-ghost">Назад</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

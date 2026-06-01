@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Цены — ORDENTIST CLINIC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/prices.css">
+</head>
+<body>
+
+<svg class="icon-sprite" aria-hidden="true">
+    <defs>
+        <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+        <symbol id="i-chev-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    </defs>
+</svg>
+
+<header class="site-header">
+    <div class="header-top">
+        <section class="header-section-logo">
+            <img src="/images/logo/logo.png" alt="Логотип ORDENTIST CLINIC"/>
+            <h1>ORDENTIST CLINIC</h1>
+        </section>
+        <p class="slogan">ВАШИ ЗУБЫ — НАША ЗАБОТА</p>
+        <div class="contacts">
+            <p><svg class="icon-xs"><use href="#i-pin"/></svg> Ул. Восстания, 95</p>
+            <p><svg class="icon-xs"><use href="#i-phone"/></svg> +7 (999) 324-54-54</p>
+            <p><svg class="icon-xs"><use href="#i-clock"/></svg> Пн–Пт 08:00–20:00 · Сб 08:00–18:00</p>
+        </div>
+    </div>
+    <nav class="main-nav">
+        <a href="/#appointment" class="nav-cta">Записаться</a>
+        <a href="/#services">Услуги</a>
+        <a href="/#doctors">Врачи</a>
+        <a href="/#reviews">Отзывы</a>
+        <a href="/#branches">Филиалы</a>
+        <a href="/prices" style="color:var(--color-primary-dark);font-weight:700;">Цены</a>
+        <a href="/about">О нас</a>
+        <span class="nav-divider"></span>
+        <a href="/login" class="nav-auth"><svg class="icon-sm"><use href="#i-user"/></svg> Войти</a>
+        <a href="/register" class="nav-auth nav-auth-primary">Регистрация</a>
+    </nav>
+</header>
+
+<main>
+    <!-- Hero -->
+    <section class="prices-hero">
+        <div class="prices-hero-content">
+            <a href="/" class="prices-back"><svg class="icon-sm"><use href="#i-chev-left"/></svg> На главную</a>
+            <h1>Прайс-лист услуг</h1>
+            <p>Прозрачные цены без скрытых платежей. Консультация — бесплатно.</p>
+        </div>
+    </section>
+
+    <div class="prices-container">
+
+        <!-- Поиск по услугам -->
+        <div class="prices-search-wrap">
+            <div class="prices-search">
+                <svg class="icon-sm"><use href="#i-search"/></svg>
+                <input type="text" id="prices-search-input" placeholder="Поиск по названию услуги...">
+            </div>
+            <!-- Фильтр по категориям -->
+            <div class="prices-cats" id="prices-cats">
+                <button class="prices-cat active" data-cat="all">Все</button>
+                {% for cat in categories.keys() %}
+                <button class="prices-cat" data-cat="{{ cat }}">{{ cat }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Таблицы по категориям -->
+        {% for cat, services in categories.items() %}
+        <div class="prices-group" data-category="{{ cat }}">
+            <h2 class="prices-group-title">{{ cat }}</h2>
+            <div class="prices-table-wrap">
+                <table class="prices-table">
+                    <thead>
+                        <tr>
+                            <th>Услуга</th>
+                            <th>Стоимость</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in services %}
+                        <tr class="prices-row" data-name="{{ s.name|lower }}">
+                            <td>{{ s.name }}</td>
+                            <td class="prices-price">
+                                {% if s.price and s.price > 0 %}
+                                    {{ s.price|int }} ₽
+                                {% else %}
+                                    Бесплатно
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/#appointment" class="btn-mini">Записаться</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="prices-empty" class="prices-empty" style="display:none;">
+            Услуги не найдены. Попробуйте другой запрос.
+        </div>
+
+        <!-- Примечание -->
+        <div class="prices-note">
+            <svg><use href="#i-check"/></svg>
+            <p>Цены указаны за одну процедуру. Точная стоимость определяется после осмотра врача.
+               Пенсионерам и детям до 14 лет — скидка 10%. Первичная консультация — бесплатно.</p>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-inner">
+        <h4>© 2026 ORDENTIST CLINIC</h4>
+        <div class="footer-links">
+            <p>Все права защищены.</p>
+            <a href="#">Политика конфиденциальности</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+const searchInput = document.getElementById('prices-search-input');
+const catBtns = document.querySelectorAll('.prices-cat');
+const groups = document.querySelectorAll('.prices-group');
+const emptyMsg = document.getElementById('prices-empty');
+let activeCat = 'all';
+
+function filterPrices() {
+    const q = searchInput.value.toLowerCase().trim();
+    let anyVisible = false;
+
+    groups.forEach(group => {
+        const cat = group.dataset.category;
+        const catMatch = activeCat === 'all' || cat === activeCat;
+        if (!catMatch) { group.style.display = 'none'; return; }
+
+        const rows = group.querySelectorAll('.prices-row');
+        let groupVisible = false;
+        rows.forEach(row => {
+            const name = row.dataset.name;
+            const match = !q || name.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) groupVisible = true;
+        });
+        group.style.display = groupVisible ? '' : 'none';
+        if (groupVisible) anyVisible = true;
+    });
+
+    emptyMsg.style.display = anyVisible ? 'none' : 'block';
+}
+
+searchInput.addEventListener('input', filterPrices);
+
+catBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        catBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCat = btn.dataset.cat;
+        filterPrices();
+    });
+});
+</script>
+</body>
+</html>

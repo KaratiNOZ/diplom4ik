@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация — ORDENTIST CLINIC{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <a href="/" class="auth-brand">
+        <img src="/images/logo/logo.png" alt="">
+        <span>ORDENTIST CLINIC</span>
+    </a>
+
+    <div class="auth-card">
+        <h1>Создать аккаунт</h1>
+        <p class="auth-sub">Зарегистрируйтесь, чтобы записываться онлайн и получать ачивки за визиты.</p>
+
+        <form method="post" action="/register" class="auth-form" id="reg-form" novalidate>
+            <div class="auth-grid-2">
+                <label>
+                    <span>Имя <span style="color:#c0392b">*</span></span>
+                    <input type="text" name="first_name"
+                           value="{{ form.get('first_name','') }}"
+                           placeholder="Иван"
+                           class="{{ 'input-invalid' if errors.get('first_name') }}">
+                    {% if errors.get('first_name') %}
+                    <span class="field-error">{{ errors.first_name }}</span>
+                    {% endif %}
+                </label>
+                <label>
+                    <span>Фамилия <span style="color:#c0392b">*</span></span>
+                    <input type="text" name="last_name"
+                           value="{{ form.get('last_name','') }}"
+                           placeholder="Иванов"
+                           class="{{ 'input-invalid' if errors.get('last_name') }}">
+                    {% if errors.get('last_name') %}
+                    <span class="field-error">{{ errors.last_name }}</span>
+                    {% endif %}
+                </label>
+            </div>
+
+            <label>
+                <span>Отчество</span>
+                <input type="text" name="middle_name"
+                       value="{{ form.get('middle_name','') }}"
+                       placeholder="Иванович">
+            </label>
+
+            <label>
+                <span>Телефон <span style="color:#c0392b">*</span></span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-phone"/></svg>
+                    <input type="tel" name="phone"
+                           value="{{ form.get('phone','') }}"
+                           placeholder="+7 (___) ___-__-__"
+                           class="{{ 'input-invalid' if errors.get('phone') }}">
+                </div>
+                {% if errors.get('phone') %}
+                <span class="field-error">{{ errors.phone }}</span>
+                {% endif %}
+            </label>
+
+            <label>
+                <span>E-mail <span style="color:#c0392b">*</span></span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-mail"/></svg>
+                    <input type="email" name="email"
+                           value="{{ form.get('email','') }}"
+                           placeholder="you@example.com"
+                           class="{{ 'input-invalid' if errors.get('email') }}">
+                </div>
+                {% if errors.get('email') %}
+                <span class="field-error">{{ errors.email }}</span>
+                {% endif %}
+            </label>
+
+            <label>
+                <span>Дата рождения</span>
+                <input type="date" name="birth_date"
+                       value="{{ form.get('birth_date','') }}">
+            </label>
+
+            <div class="auth-grid-2">
+                <label>
+                    <span>Пароль <span style="color:#c0392b">*</span></span>
+                    <div class="input-with-icon">
+                        <svg class="icon-sm"><use href="#i-lock"/></svg>
+                        <input type="password" name="password" id="reg-pw"
+                               placeholder="Минимум 6 символов"
+                               class="{{ 'input-invalid' if errors.get('password') }}">
+                    </div>
+                    {% if errors.get('password') %}
+                    <span class="field-error">{{ errors.password }}</span>
+                    {% endif %}
+                </label>
+                <label>
+                    <span>Повторите пароль <span style="color:#c0392b">*</span></span>
+                    <div class="input-with-icon">
+                        <svg class="icon-sm"><use href="#i-lock"/></svg>
+                        <input type="password" name="password2" id="reg-pw2"
+                               placeholder="••••••"
+                               class="{{ 'input-invalid' if errors.get('password2') }}">
+                    </div>
+                    {% if errors.get('password2') %}
+                    <span class="field-error">{{ errors.password2 }}</span>
+                    {% endif %}
+                </label>
+            </div>
+
+            <label class="checkbox">
+                <input type="checkbox" name="agree" required>
+                <span>Я согласен на обработку персональных данных</span>
+            </label>
+
+            <button type="submit" class="btn btn-primary">
+                Создать аккаунт
+                <svg class="icon-sm"><use href="#i-arrow"/></svg>
+            </button>
+        </form>
+
+        <p class="auth-footer">
+            Уже есть аккаунт? <a href="/login" class="auth-link">Войти</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('reg-form').addEventListener('submit', function(e) {
+    let ok = true;
+
+    function validate(name, check, msg) {
+        const inp = document.querySelector(`[name="${name}"]`);
+        if (!inp) return;
+        const err = inp.closest('label').querySelector('.field-error') ||
+                    (() => { const s = document.createElement('span'); s.className = 'field-error'; inp.closest('label').appendChild(s); return s; })();
+        const val = inp.value.trim();
+        if (!check(val)) {
+            err.textContent = msg;
+            inp.classList.add('input-invalid');
+            ok = false;
+        } else {
+            err.textContent = '';
+            inp.classList.remove('input-invalid');
+        }
+    }
+
+    validate('first_name', v => v.length > 0, 'Введите имя');
+    validate('last_name',  v => v.length > 0, 'Введите фамилию');
+    validate('phone',      v => v.length >= 7, 'Введите телефон');
+    validate('email',      v => v.includes('@') && v.length > 4, 'Введите корректный email');
+    validate('password',   v => v.length >= 6, 'Минимум 6 символов');
+
+    const pw  = document.getElementById('reg-pw');
+    const pw2 = document.getElementById('reg-pw2');
+    if (pw && pw2 && pw.value !== pw2.value) {
+        const err = pw2.closest('label').querySelector('.field-error') ||
+                    (() => { const s = document.createElement('span'); s.className = 'field-error'; pw2.closest('label').appendChild(s); return s; })();
+        err.textContent = 'Пароли не совпадают';
+        pw2.classList.add('input-invalid');
+        ok = false;
+    }
+
+    if (!ok) e.preventDefault();
+});
+</script>
+{% endblock %}

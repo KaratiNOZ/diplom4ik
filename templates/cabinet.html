@@ -1,0 +1,945 @@
+{% extends 'base.html' %}
+{% block title %}Личный кабинет — ORDENTIST CLINIC{% endblock %}
+{% block body_class %}cabinet-page{% endblock %}
+
+{% set role = user.role %}
+
+{% block content %}
+<div class="cabinet-layout">
+
+    {# ===== SIDEBAR ===== #}
+    <aside class="cabinet-sidebar" id="cabinet-sidebar">
+        <div class="sidebar-top-row">
+            <a href="/" class="cabinet-brand">
+                <img src="/images/logo/logo.png" alt="">
+                <span>ORDENTIST</span>
+            </a>
+            <button class="sidebar-close-btn" id="sidebar-close" aria-label="Закрыть меню">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+
+        <div class="cabinet-user">
+            <div class="cabinet-avatar">
+                {{ (user.first_name[0] if user.first_name else 'U') ~ (user.last_name[0] if user.last_name else '') }}
+            </div>
+            <div class="cabinet-user-info">
+                <strong>{{ user.last_name }} {{ user.first_name }}</strong>
+                <span class="role-badge role-{{ role }}">
+                    <svg class="icon-xs"><use href="#i-user"/></svg>
+                    {{ user.role_label }}
+                </span>
+            </div>
+        </div>
+
+        <nav class="cabinet-nav">
+            <a href="#profile"><svg><use href="#i-user"/></svg> Профиль</a>
+            <a href="#appointments"><svg><use href="#i-calendar"/></svg> Мои записи</a>
+            <a href="#history"><svg><use href="#i-list"/></svg> История лечения</a>
+            {% if role == 'patient' %}
+                <a href="#achievements"><svg><use href="#i-trophy"/></svg> Достижения</a>
+            {% endif %}
+            {% if role == 'doctor' %}
+                <a href="#schedule"><svg><use href="#i-stethoscope"/></svg> Расписание</a>
+            {% endif %}
+            {% if role in ['manager', 'admin'] %}
+                <a href="#manage"><svg><use href="#i-settings"/></svg> Управление</a>
+            {% endif %}
+            <a href="#prices"><svg><use href="#i-tag"/></svg> Прайс-лист</a>
+            <a href="#settings"><svg><use href="#i-settings"/></svg> Настройки</a>
+            <a href="/logout" class="logout"><svg><use href="#i-logout"/></svg> Выйти</a>
+        </nav>
+    </aside>
+
+    {# ===== MAIN ===== #}
+    <main class="cabinet-main">
+
+        {# Hamburger для мобильных #}
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Открыть меню">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            Меню
+        </button>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        {# Flash-сообщения #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# Уведомления #}
+        {% if notifications %}
+        <div class="notifications-bar">
+            {% for n in notifications %}
+            <div class="notification notification-{{ n.type }}">
+                <svg class="icon-sm"><use href="#i-clock"/></svg>
+                {{ n.text }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Шапка #}
+        <header class="cabinet-header">
+            <div>
+                <h1>Здравствуйте, {{ user.first_name or 'друг' }}!</h1>
+                <p class="cabinet-greeting">
+                    {% if role == 'patient' %}Заботьтесь о здоровье — каждый визит приближает к новой ачивке.{% endif %}
+                    {% if role == 'doctor' %}Сегодня запланировано {{ stats.today }} приём(ов).{% endif %}
+                    {% if role == 'manager' %}Сводка по клинике на сегодня.{% endif %}
+                    {% if role == 'admin' %}Панель администратора системы.{% endif %}
+                </p>
+            </div>
+            <a href="#new-appointment" class="btn btn-primary" onclick="document.getElementById('new-appointment').scrollIntoView({behavior:'smooth'});return false;">
+                <svg class="icon-sm"><use href="#i-calendar"/></svg>
+                Записаться
+            </a>
+        </header>
+
+        {# ===== Статистика ===== #}
+        <section class="cabinet-stats">
+            {% if role == 'patient' %}
+                <div class="stat-card"><span>Визитов</span><strong>{{ stats.visits }}</strong></div>
+                <div class="stat-card"><span>Записей в истории</span><strong>{{ stats.teeth_healed }}</strong></div>
+                <div class="stat-card"><span>Ачивок</span><strong>{{ stats.achievements }}</strong></div>
+                <div class="stat-card"><span>Следующий приём</span><strong>{{ stats.next_appt }}</strong></div>
+            {% elif role == 'doctor' %}
+                <div class="stat-card"><span>Приёмов сегодня</span><strong>{{ stats.today }}</strong></div>
+                <div class="stat-card"><span>Пациентов всего</span><strong>{{ stats.total_patients }}</strong></div>
+                <div class="stat-card"><span>Стаж</span><strong>{{ stats.experience }} лет</strong></div>
+                <div class="stat-card"><span>Рейтинг</span><strong>{{ stats.rating }} ★</strong></div>
+            {% elif role == 'manager' %}
+                <div class="stat-card"><span>Записей сегодня</span><strong>{{ stats.today_appts }}</strong></div>
+                <div class="stat-card"><span>Врачей</span><strong>{{ stats.total_doctors }}</strong></div>
+                <div class="stat-card"><span>Пациентов</span><strong>{{ stats.total_patients }}</strong></div>
+                <div class="stat-card"><span>Кабинетов</span><strong>{{ stats.offices }}</strong></div>
+            {% elif role == 'admin' %}
+                <div class="stat-card"><span>Пользователей</span><strong>{{ stats.users }}</strong></div>
+                <div class="stat-card"><span>Врачей</span><strong>{{ stats.doctors }}</strong></div>
+                <div class="stat-card"><span>Пациентов</span><strong>{{ stats.patients }}</strong></div>
+                <div class="stat-card"><span>Записей</span><strong>{{ stats.appointments }}</strong></div>
+            {% endif %}
+        </section>
+
+        {# ===== Профиль ===== #}
+        <section class="cabinet-section section-profile" id="profile">
+            <h2 class="cabinet-section-title"><svg><use href="#i-user"/></svg> Профиль</h2>
+
+            {# Фото врача #}
+            {% if role == 'doctor' %}
+            <div class="doctor-profile-photo">
+                <img src="/images/doctors/{{ user.photo or 'doctor_placeholder.png' }}"
+                     alt="{{ user.last_name }}" class="profile-photo-img">
+                <form method="post" action="/cabinet/doctor/photo"
+                      enctype="multipart/form-data" class="photo-upload-form">
+                    <label class="photo-upload-btn">
+                        <svg class="icon-sm"><use href="#i-settings"/></svg>
+                        Сменить фото
+                        <input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp"
+                               onchange="this.form.submit()" style="display:none;">
+                    </label>
+                </form>
+            </div>
+            {% endif %}
+            <div class="profile-grid">
+                <div class="info-row"><span>ФИО</span><strong>{{ user.last_name }} {{ user.first_name }} {{ user.middle_name or '' }}</strong></div>
+                <div class="info-row"><span>Роль</span><strong>{{ user.role_label }}</strong></div>
+                <div class="info-row"><span>Телефон</span><strong>{{ user.phone or '—' }}</strong></div>
+                <div class="info-row"><span>E-mail</span><strong>{{ user.email or '—' }}</strong></div>
+                {% if role == 'doctor' and user.qualification %}
+                <div class="info-row"><span>Специализация</span><strong>{{ user.qualification }}</strong></div>
+                <div class="info-row"><span>Стаж</span><strong>{{ user.experience }} лет</strong></div>
+                {% endif %}
+            </div>
+
+            <details class="cabinet-details" style="margin-top:20px;">
+                <summary class="cabinet-details-toggle">Редактировать профиль</summary>
+                <form method="post" action="/cabinet/profile/edit" class="cabinet-form" style="margin-top:16px;">
+                    <div class="form-row-3">
+                        <label><span>Имя</span><input type="text" name="first_name" value="{{ user.first_name or '' }}"></label>
+                        <label><span>Фамилия</span><input type="text" name="last_name" value="{{ user.last_name or '' }}"></label>
+                        <label><span>Отчество</span><input type="text" name="middle_name" value="{{ user.middle_name or '' }}"></label>
+                    </div>
+                    <div class="form-row-2">
+                        <label><span>Телефон</span><input type="tel" name="phone" value="{{ user.phone or '' }}"></label>
+                        <label><span>E-mail</span><input type="email" name="email" value="{{ user.email or '' }}"></label>
+                    </div>
+                    {% if role == 'patient' %}
+                    <label><span>Дата рождения</span><input type="date" name="birth_date"></label>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </form>
+            </details>
+        </section>
+
+        {# ===== Записи на приём ===== #}
+        <section class="cabinet-section section-appointments" id="appointments">
+            <h2 class="cabinet-section-title">
+                <svg><use href="#i-calendar"/></svg>
+                {% if role == 'doctor' %}Расписание приёмов{% else %}Мои записи{% endif %}
+            </h2>
+
+            {# Фильтр по дате и статусу #}
+            <div class="appt-filter-row">
+                <label class="appt-filter-label">
+                    <span>С</span>
+                    <input type="date" id="filter-date-from" class="appt-filter-input">
+                </label>
+                <label class="appt-filter-label">
+                    <span>По</span>
+                    <input type="date" id="filter-date-to" class="appt-filter-input">
+                </label>
+                <select id="filter-status" class="appt-filter-input">
+                    <option value="">Все статусы</option>
+                    <option value="scheduled">Запланированные</option>
+                    <option value="completed">Завершённые</option>
+                    <option value="cancelled">Отменённые</option>
+                </select>
+                <button type="button" class="btn-mini" id="filter-reset">Сбросить</button>
+            </div>
+
+            {% if appointments %}
+                <div class="appointments-list">
+                    {% for a in appointments %}
+                    <div class="appointment-row {% if a.status == 'cancelled' %}appt-cancelled{% elif a.status == 'completed' %}appt-completed{% endif %}"
+                         data-date="{{ a.date_iso }}" data-status="{{ a.status }}">
+                        <div class="appointment-when">
+                            <svg><use href="#i-calendar"/></svg>
+                            <div>
+                                <strong>{{ a.date }}</strong>
+                                <span>{{ a.time }}</span>
+                            </div>
+                        </div>
+                        <div class="appointment-info">
+                            <strong>{{ a.service }}</strong>
+                            <span>
+                                {% if role == 'doctor' %}Пациент: {{ a.patient }}{% else %}{{ a.doctor }}{% endif %}
+                                {% if a.office != '—' %} · кабинет {{ a.office }}{% endif %}
+                            </span>
+                            <span class="appt-status appt-status-{{ a.status }}">
+                                {% if a.status == 'scheduled' %}Запланирован
+                                {% elif a.status == 'completed' %}Завершён
+                                {% elif a.status == 'cancelled' %}Отменён
+                                {% else %}{{ a.status }}{% endif %}
+                            </span>
+                        </div>
+                        <div class="appointment-actions">
+                            {% if a.status == 'scheduled' %}
+                            <form method="post" action="/cabinet/appointment/{{ a.id }}/cancel"
+                                  onsubmit="return confirm('Отменить запись?');" style="display:inline;">
+                                <button type="submit" class="btn-mini btn-danger">Отменить</button>
+                            </form>
+                            {% if role in ['doctor', 'manager', 'admin'] %}
+                            <form method="post" action="/cabinet/appointment/{{ a.id }}/complete"
+                                  onsubmit="return confirm('Завершить приём?');" style="display:inline;margin-left:6px;">
+                                <button type="submit" class="btn-mini btn-complete">Завершить</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="cabinet-empty">Записей пока нет.</p>
+            {% endif %}
+        </section>
+
+        {# ===== Форма новой записи ===== #}
+        <section class="cabinet-section section-new-appt" id="new-appointment">
+            <h2 class="cabinet-section-title"><svg><use href="#i-calendar"/></svg> Записаться на приём</h2>
+            <form method="post" action="/cabinet/appointment/new" class="cabinet-form">
+                <div class="form-row-2">
+                    <label>
+                        <span>Врач</span>
+                        <select name="doctor_id" id="appt-doctor" onchange="loadSlots()">
+                            <option value="">— выберите врача —</option>
+                            {% for d in doctors %}
+                            <option value="{{ d.id_doctor }}">{{ d.full_name }} ({{ d.qualification or '' }})</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>
+                        <span>Услуга</span>
+                        <select name="service_id">
+                            <option value="">— выберите услугу —</option>
+                            {% for s in services %}
+                            <option value="{{ s.id_service }}">{{ s.name }}{% if s.price %} — {{ s.price|int }} ₽{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <div class="form-row-2">
+                    <label>
+                        <span>Дата <span class="req">*</span></span>
+                        <input type="date" name="appointment_date" id="appt-date"
+                               min="{{ today_iso }}" required onchange="loadSlots()">
+                    </label>
+                    <label>
+                        <span>Время</span>
+                        <select name="appointment_time" id="appt-time">
+                            <option value="">— сначала выберите врача и дату —</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-row-2">
+                    <label>
+                        <span>Кабинет</span>
+                        <select name="office_id">
+                            <option value="">— любой —</option>
+                            {% for o in offices %}
+                            <option value="{{ o.id_office }}">Кабинет № {{ o.office_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    {% if role in ['manager', 'admin', 'doctor'] %}
+                    <label>
+                        <span>Пациент <span class="req">*</span></span>
+                        <select name="patient_id" required>
+                            <option value="">— выберите пациента —</option>
+                            {% for p in patients %}
+                            <option value="{{ p.id_patient }}">{{ p.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon-sm"><use href="#i-calendar"/></svg>
+                    Создать запись
+                </button>
+            </form>
+        </section>
+
+        {# ===== История лечения ===== #}
+        <section class="cabinet-section section-history" id="history">
+            <div class="section-title-row">
+                <h2 class="cabinet-section-title"><svg><use href="#i-list"/></svg> История лечения</h2>
+                {% if histories %}
+                <button type="button" class="btn-mini btn-print" onclick="printHistory()" title="Печать / сохранить PDF">
+                    <svg class="icon-sm"><use href="#i-print"/></svg> Печать / PDF
+                </button>
+                {% endif %}
+            </div>
+
+            {% if histories %}
+                <div class="history-list">
+                    {% for h in histories %}
+                    <div class="history-item">
+                        <div class="history-date">{{ h.date }}</div>
+                        <div class="history-body">
+                            <strong>{{ h.diagnosis }}</strong>
+                            <p>{{ h.treatment }}</p>
+                            {% if role != 'patient' %}
+                            <p class="history-meta">Пациент: {{ h.patient }}</p>
+                            {% endif %}
+                            <p class="history-meta">Врач: {{ h.doctor }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="cabinet-empty">История лечения пуста.</p>
+            {% endif %}
+
+            {# Форма добавления записи (только для врача/менеджера/админа) #}
+            {% if role in ['doctor', 'manager', 'admin'] %}
+            <details class="cabinet-details" style="margin-top:24px;">
+                <summary class="cabinet-details-toggle">Добавить запись в историю</summary>
+                <form method="post" action="/cabinet/history/add" class="cabinet-form" style="margin-top:16px;">
+                    <div class="form-row-2">
+                        <label>
+                            <span>Пациент <span class="req">*</span></span>
+                            <select name="patient_id" required>
+                                <option value="">— выберите пациента —</option>
+                                {% for p in patients %}
+                                <option value="{{ p.id_patient }}">{{ p.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>
+                            <span>Дата визита <span class="req">*</span></span>
+                            <input type="date" name="visit_date" required>
+                        </label>
+                    </div>
+                    {% if role in ['manager', 'admin'] %}
+                    <label>
+                        <span>Врач</span>
+                        <select name="doctor_id">
+                            <option value="">— выберите врача —</option>
+                            {% for d in doctors %}
+                            <option value="{{ d.id_doctor }}">{{ d.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    {% endif %}
+                    <label>
+                        <span>Диагноз <span class="req">*</span></span>
+                        <input type="text" name="diagnosis" placeholder="Например: Средний кариес зуба 26" required>
+                    </label>
+                    <label>
+                        <span>Лечение / Назначения</span>
+                        <textarea name="treatment" rows="3" placeholder="Описание проведённого лечения..."></textarea>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Добавить запись</button>
+                </form>
+            </details>
+            {% endif %}
+        </section>
+
+        {# ===== Достижения (только пациент) ===== #}
+        {% if role == 'patient' %}
+        <section class="cabinet-section section-achievements" id="achievements">
+            <h2 class="cabinet-section-title">
+                <svg><use href="#i-trophy"/></svg> Достижения
+            </h2>
+            <p class="cabinet-section-sub">Получайте награды за визиты к стоматологу. Прогресс обновляется автоматически!</p>
+
+            <div class="achievements-grid">
+                {% for ach in achievements %}
+                <div class="achievement {% if ach.unlocked %}unlocked{% else %}locked{% endif %}">
+                    <div class="achievement-icon">
+                        <svg><use href="#{{ ach.icon }}"/></svg>
+                        {% if ach.unlocked %}<span class="achievement-check"><svg><use href="#i-check"/></svg></span>{% endif %}
+                    </div>
+                    <h4>{{ ach.title }}</h4>
+                    <p>{{ ach.desc }}</p>
+                    <div class="achievement-progress">
+                        <div class="achievement-bar">
+                            <div class="achievement-fill" style="width: {{ ((ach.progress / ach.total) * 100)|round if ach.total else 0 }}%"></div>
+                        </div>
+                        <span>{{ ach.progress }} / {{ ach.total }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {# ===== Управление (менеджер / админ) ===== #}
+        {% if role in ['manager', 'admin'] %}
+        <section class="cabinet-section section-manage" id="manage">
+            <h2 class="cabinet-section-title"><svg><use href="#i-settings"/></svg> Управление</h2>
+
+            {# Поиск и фильтр записей #}
+            <h3 class="manage-subtitle">Все записи на приём</h3>
+            <div class="manage-search-row">
+                <div class="manage-search">
+                    <svg class="icon-sm"><use href="#i-search"/></svg>
+                    <input type="text" id="appts-search" placeholder="Поиск по пациенту или врачу...">
+                </div>
+                <select id="appts-status-filter" class="manage-filter-select">
+                    <option value="">Все статусы</option>
+                    <option value="scheduled">Запланированные</option>
+                    <option value="completed">Завершённые</option>
+                    <option value="cancelled">Отменённые</option>
+                </select>
+            </div>
+            <div class="table-wrapper" style="margin-bottom:32px;">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Дата</th><th>Время</th><th>Пациент</th><th>Врач</th><th>Услуга</th><th>Статус</th></tr>
+                    </thead>
+                    <tbody id="appts-tbody">
+                        <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="appts-pagination"></div>
+
+            {# Список пациентов #}
+            <h3 class="manage-subtitle">Пациенты клиники</h3>
+            <div class="manage-search-row">
+                <div class="manage-search">
+                    <svg class="icon-sm"><use href="#i-search"/></svg>
+                    <input type="text" id="patients-search" placeholder="Поиск по имени или телефону...">
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>#</th><th>ФИО</th><th>Телефон</th><th>Дата рождения</th><th>Визитов</th><th>Последний визит</th></tr>
+                    </thead>
+                    <tbody id="patients-tbody">
+                        <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="patients-pagination"></div>
+
+            {# Список пользователей (только admin) #}
+            {% if role == 'admin' %}
+            <h3 class="manage-subtitle" style="margin-top:32px;">Все пользователи системы</h3>
+            <div class="table-wrapper" style="margin-bottom:32px;">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>#</th><th>ФИО / Email</th><th>Телефон</th><th>Роль</th><th>Дата регистрации</th><th>Действие</th></tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {# Добавить врача #}
+            <h3 class="manage-subtitle">Добавить сотрудника</h3>
+            <details class="cabinet-details">
+                <summary class="cabinet-details-toggle">Открыть форму</summary>
+                <form method="post" action="/cabinet/doctor/add" class="cabinet-form"
+                      style="margin-top:16px;" id="add-doctor-form" novalidate>
+                    <div class="form-row-3">
+                        <label><span>Имя <span class="req">*</span></span>
+                            <input type="text" name="first_name" placeholder="Иван" required>
+                            <span class="field-error"></span></label>
+                        <label><span>Фамилия <span class="req">*</span></span>
+                            <input type="text" name="last_name" placeholder="Иванов" required>
+                            <span class="field-error"></span></label>
+                        <label><span>Отчество</span>
+                            <input type="text" name="middle_name" placeholder="Иванович"></label>
+                    </div>
+                    <div class="form-row-2">
+                        <label><span>Специализация</span>
+                            <input type="text" name="qualification" placeholder="Стоматолог-терапевт"></label>
+                        <label><span>Стаж (лет)</span>
+                            <input type="number" name="experience" min="0" max="60" value="0" placeholder="0"></label>
+                    </div>
+                    <div class="form-row-2">
+                        <label><span>Email <span class="req">*</span></span>
+                            <input type="email" name="email" placeholder="doctor@clinic.ru" required>
+                            <span class="field-error"></span></label>
+                        <label><span>Телефон</span>
+                            <input type="tel" name="phone" placeholder="+7 (___) ___-__-__"></label>
+                    </div>
+                    {% if role == 'admin' %}
+                    <label><span>Роль <span class="req">*</span></span>
+                        <select name="role_override">
+                            <option value="doctor">Врач</option>
+                            <option value="manager">Менеджер</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    </label>
+                    {% endif %}
+                    <label><span>Пароль (временный)</span>
+                        <input type="password" name="password" placeholder="Минимум 6 символов"></label>
+                    <button type="submit" class="btn btn-primary">Добавить сотрудника</button>
+                </form>
+            </details>
+        </section>
+        {% endif %}
+
+        {# ===== Прайс-лист ===== #}
+        <section class="cabinet-section section-prices" id="prices">
+            <h2 class="cabinet-section-title"><svg><use href="#i-tag"/></svg> Прайс-лист</h2>
+            <p class="cabinet-section-sub">Актуальные цены на все услуги клиники. Консультация — бесплатно.</p>
+
+            {# Поиск по услугам #}
+            <div class="manage-search" style="margin-bottom:16px;max-width:400px;">
+                <svg class="icon-sm"><use href="#i-search"/></svg>
+                <input type="text" id="cab-prices-search" placeholder="Поиск по названию услуги...">
+            </div>
+
+            {% for cat, cat_services in price_categories.items() %}
+            <div class="prices-group-cab" data-cat="{{ cat }}">
+                <h3 class="prices-group-title-cab">{{ cat }}</h3>
+                <div class="prices-table-wrap">
+                    <table class="prices-table">
+                        <thead>
+                            <tr><th>Услуга</th><th>Стоимость</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for s in cat_services %}
+                            <tr class="prices-row-cab" data-name="{{ s.name|lower }}">
+                                <td>{{ s.name }}</td>
+                                <td class="prices-price">
+                                    {% if s.price and s.price > 0 %}{{ s.price|int }} ₽
+                                    {% else %}Бесплатно{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div id="cab-prices-empty" class="cabinet-empty" style="display:none;">
+                Услуги не найдены.
+            </div>
+
+            <div class="prices-note" style="margin-top:20px;">
+                <svg><use href="#i-check"/></svg>
+                <p>Цены указаны за одну процедуру. Точная стоимость определяется после осмотра врача.
+                   Пенсионерам и детям до 14 лет — скидка 10%.</p>
+            </div>
+        </section>
+
+        {# ===== Настройки ===== #}
+        <section class="cabinet-section section-settings" id="settings">
+            <h2 class="cabinet-section-title"><svg><use href="#i-settings"/></svg> Настройки</h2>
+
+            <h3 class="manage-subtitle">Смена пароля</h3>
+            <form method="post" action="/cabinet/password/change" class="cabinet-form">
+                <label>
+                    <span>Текущий пароль</span>
+                    <div class="input-with-icon">
+                        <svg class="icon-sm"><use href="#i-lock"/></svg>
+                        <input type="password" name="old_password" required>
+                    </div>
+                </label>
+                <div class="form-row-2">
+                    <label>
+                        <span>Новый пароль</span>
+                        <div class="input-with-icon">
+                            <svg class="icon-sm"><use href="#i-lock"/></svg>
+                            <input type="password" name="new_password" placeholder="Минимум 6 символов" required>
+                        </div>
+                    </label>
+                    <label>
+                        <span>Повторите новый пароль</span>
+                        <div class="input-with-icon">
+                            <svg class="icon-sm"><use href="#i-lock"/></svg>
+                            <input type="password" name="new_password2" required>
+                        </div>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Изменить пароль</button>
+            </form>
+        </section>
+
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Hamburger меню ───────────────────────────────────────────────────────
+    const sidebar   = document.getElementById('cabinet-sidebar');
+    const hamburger = document.getElementById('hamburger-btn');
+    const overlay   = document.getElementById('sidebar-overlay');
+    const closeBtn  = document.getElementById('sidebar-close');
+
+    function openSidebar()  { sidebar.classList.add('sidebar-open'); overlay.classList.add('overlay-visible'); }
+    function closeSidebar() { sidebar.classList.remove('sidebar-open'); overlay.classList.remove('overlay-visible'); }
+
+    if (hamburger) hamburger.addEventListener('click', openSidebar);
+    if (closeBtn)  closeBtn.addEventListener('click', closeSidebar);
+    if (overlay)   overlay.addEventListener('click', closeSidebar);
+
+    // Закрывать при клике на пункт меню (мобильные)
+    document.querySelectorAll('.cabinet-nav a').forEach(a => {
+        a.addEventListener('click', () => { if (window.innerWidth < 900) closeSidebar(); });
+    });
+
+    // ── Минимальная дата записи ──────────────────────────────────────────────
+    const dateInput = document.getElementById('appt-date');
+    if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+
+    // ── Активный пункт меню при скролле ─────────────────────────────────────
+    const navLinks = document.querySelectorAll('.cabinet-nav a[href^="#"]');
+    function updateActiveNav() {
+        const linked = Array.from(navLinks)
+            .map(l => ({ link: l, el: document.getElementById(l.getAttribute('href').slice(1)) }))
+            .filter(x => x.el);
+        const scrollY = window.scrollY + 130;
+        let cur = linked[0];
+        for (const item of linked) { if (item.el.offsetTop <= scrollY) cur = item; }
+        navLinks.forEach(l => l.classList.remove('active'));
+        if (cur) cur.link.classList.add('active');
+    }
+    window.addEventListener('scroll', updateActiveNav, { passive: true });
+    updateActiveNav();
+
+    // ── Фильтр записей по дате и статусу ────────────────────────────────────
+    const filterFrom   = document.getElementById('filter-date-from');
+    const filterTo     = document.getElementById('filter-date-to');
+    const filterStatus = document.getElementById('filter-status');
+    const filterReset  = document.getElementById('filter-reset');
+    const apptRows     = document.querySelectorAll('.appointment-row[data-date]');
+
+    function applyApptFilter() {
+        const from   = filterFrom   ? filterFrom.value   : '';
+        const to     = filterTo     ? filterTo.value     : '';
+        const status = filterStatus ? filterStatus.value : '';
+        let visible = 0;
+        apptRows.forEach(row => {
+            const d = row.dataset.date;
+            const s = row.dataset.status;
+            const okDate   = (!from || d >= from) && (!to || d <= to);
+            const okStatus = !status || s === status;
+            row.style.display = (okDate && okStatus) ? '' : 'none';
+            if (okDate && okStatus) visible++;
+        });
+        const empty = document.getElementById('appt-empty-msg');
+        if (empty) empty.style.display = visible === 0 ? '' : 'none';
+    }
+
+    if (filterFrom)   filterFrom.addEventListener('change', applyApptFilter);
+    if (filterTo)     filterTo.addEventListener('change', applyApptFilter);
+    if (filterStatus) filterStatus.addEventListener('change', applyApptFilter);
+    if (filterReset) {
+        filterReset.addEventListener('click', () => {
+            if (filterFrom)   filterFrom.value = '';
+            if (filterTo)     filterTo.value = '';
+            if (filterStatus) filterStatus.value = '';
+            applyApptFilter();
+        });
+    }
+
+    // ── Пагинация пациентов ──────────────────────────────────────────────────
+    const patientsTbody    = document.getElementById('patients-tbody');
+    const patientsSearch   = document.getElementById('patients-search');
+    const patientsPagination = document.getElementById('patients-pagination');
+    const PAGE_SIZE = 10;
+    let patientsData = [];
+    let currentPage  = 1;
+
+    function renderPatientsPage(page) {
+        currentPage = page;
+        const start = (page - 1) * PAGE_SIZE;
+        const slice = patientsData.slice(start, start + PAGE_SIZE);
+        if (!slice.length) {
+            patientsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Пациентов не найдено.</td></tr>';
+        } else {
+            patientsTbody.innerHTML = slice.map((p, i) => `
+                <tr>
+                    <td>${start + i + 1}</td>
+                    <td><a href="/patient/${p.id}" class="patient-link">${p.name}</a></td>
+                    <td>${p.phone}</td>
+                    <td>${p.birth_date}</td>
+                    <td>${p.visits}</td>
+                    <td>${p.last_visit}</td>
+                </tr>`).join('');
+        }
+        renderPagination(patientsPagination, patientsData.length, page, renderPatientsPage);
+    }
+
+    function loadPatients(q) {
+        if (!patientsTbody) return;
+        const url = '/cabinet/patients' + (q ? '?q=' + encodeURIComponent(q) : '');
+        fetch(url).then(r => r.json()).then(data => {
+            patientsData = data;
+            renderPatientsPage(1);
+        }).catch(() => {
+            patientsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+        });
+    }
+
+    if (patientsTbody) loadPatients('');
+    if (patientsSearch) {
+        let timer;
+        patientsSearch.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => loadPatients(patientsSearch.value), 350);
+        });
+    }
+
+    // ── Загрузка записей (менеджер/админ) ───────────────────────────────────
+    const apptsTbody = document.getElementById('appts-tbody');
+    const apptsSearch = document.getElementById('appts-search');
+    const apptsFilter = document.getElementById('appts-status-filter');
+    const apptsPagination = document.getElementById('appts-pagination');
+    const STATUS_LABELS  = { scheduled: 'Запланирован', completed: 'Завершён', cancelled: 'Отменён' };
+    const STATUS_CLASSES = { scheduled: 'appt-status-scheduled', completed: 'appt-status-completed', cancelled: 'appt-status-cancelled' };
+    let apptsData = [];
+
+    function renderApptsPage(page) {
+        const start = (page - 1) * PAGE_SIZE;
+        const slice = apptsData.slice(start, start + PAGE_SIZE);
+        if (!slice.length) {
+            apptsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Записей не найдено.</td></tr>';
+        } else {
+            apptsTbody.innerHTML = slice.map(a => `
+                <tr>
+                    <td>${a.date}</td><td>${a.time || '—'}</td>
+                    <td>${a.patient}</td><td>${a.doctor}</td><td>${a.service}</td>
+                    <td><span class="appt-status ${STATUS_CLASSES[a.status] || ''}">${STATUS_LABELS[a.status] || a.status}</span></td>
+                </tr>`).join('');
+        }
+        if (apptsPagination) renderPagination(apptsPagination, apptsData.length, page, renderApptsPage);
+    }
+
+    function loadAppointments() {
+        if (!apptsTbody) return;
+        const q  = apptsSearch ? apptsSearch.value : '';
+        const st = apptsFilter ? apptsFilter.value : '';
+        let url = '/api/appointments?';
+        if (q)  url += 'q=' + encodeURIComponent(q) + '&';
+        if (st) url += 'status=' + st;
+        fetch(url).then(r => r.json()).then(data => {
+            apptsData = data;
+            renderApptsPage(1);
+        }).catch(() => {
+            apptsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+        });
+    }
+
+    if (apptsTbody) loadAppointments();
+    if (apptsSearch) {
+        let timer;
+        apptsSearch.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(loadAppointments, 350); });
+    }
+    if (apptsFilter) apptsFilter.addEventListener('change', loadAppointments);
+
+    // ── Загрузка пользователей (admin) ───────────────────────────────────────
+    const usersTbody = document.getElementById('users-tbody');
+    if (usersTbody) {
+        fetch('/api/users').then(r => r.json()).then(data => {
+            usersTbody.innerHTML = data.map((u, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${u.name}</strong><br><small style="color:#5b6b67">${u.email}</small></td>
+                    <td>${u.phone}</td>
+                    <td><span class="role-badge role-${u.role}">${u.role_label}</span></td>
+                    <td>${u.created}</td>
+                    <td>
+                        <form method="post" action="/cabinet/user/${u.id}/delete"
+                              onsubmit="return confirm('Удалить пользователя ${u.name}?');" style="display:inline;">
+                            <button type="submit" class="btn-mini btn-danger">Удалить</button>
+                        </form>
+                    </td>
+                </tr>`).join('');
+        }).catch(() => {
+            usersTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+        });
+    }
+
+    // ── JS-валидация формы добавления врача ──────────────────────────────────
+    const addDoctorForm = document.getElementById('add-doctor-form');
+    if (addDoctorForm) {
+        addDoctorForm.addEventListener('submit', function (e) {
+            let ok = true;
+            [['first_name','Введите имя'],['last_name','Введите фамилию'],['email','Введите email']].forEach(([name, msg]) => {
+                const inp = addDoctorForm.querySelector(`[name="${name}"]`);
+                const err = inp ? inp.nextElementSibling : null;
+                if (!inp) return;
+                const valid = inp.value.trim() && (name !== 'email' || inp.value.includes('@'));
+                if (!valid) { if (err?.classList.contains('field-error')) err.textContent = msg; inp.classList.add('input-invalid'); ok = false; }
+                else { if (err?.classList.contains('field-error')) err.textContent = ''; inp.classList.remove('input-invalid'); }
+            });
+            if (!ok) e.preventDefault();
+        });
+    }
+
+    // ── JS-валидация смены пароля ─────────────────────────────────────────────
+    const pwForm = document.querySelector('#settings .cabinet-form');
+    if (pwForm) {
+        pwForm.addEventListener('submit', function (e) {
+            const np = pwForm.querySelector('[name="new_password"]');
+            const np2 = pwForm.querySelector('[name="new_password2"]');
+            let ok = true;
+            if (np && np.value.length < 6) { np.classList.add('input-invalid'); ok = false; } else if (np) np.classList.remove('input-invalid');
+            if (np && np2 && np.value !== np2.value) { np2.classList.add('input-invalid'); ok = false; } else if (np2) np2.classList.remove('input-invalid');
+            if (!ok) e.preventDefault();
+        });
+    }
+
+    // ── Поиск по прайсу в кабинете ──────────────────────────────────────────
+    const cabPricesSearch = document.getElementById('cab-prices-search');
+    if (cabPricesSearch) {
+        cabPricesSearch.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            const groups = document.querySelectorAll('.prices-group-cab');
+            let anyVisible = false;
+            groups.forEach(group => {
+                const rows = group.querySelectorAll('.prices-row-cab');
+                let groupVisible = false;
+                rows.forEach(row => {
+                    const match = !q || row.dataset.name.includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) groupVisible = true;
+                });
+                group.style.display = groupVisible ? '' : 'none';
+                if (groupVisible) anyVisible = true;
+            });
+            const empty = document.getElementById('cab-prices-empty');
+            if (empty) empty.style.display = anyVisible ? 'none' : 'block';
+        });
+    }
+
+    // ── Автозакрытие flash-сообщений ─────────────────────────────────────────
+    document.querySelectorAll('.flash').forEach(el => {
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 5000);
+    });
+});
+
+// ── Пагинация (утилита) ──────────────────────────────────────────────────────
+function renderPagination(container, total, current, callback) {
+    if (!container) return;
+    const pages = Math.ceil(total / 10);
+    if (pages <= 1) { container.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 1; i <= pages; i++) {
+        html += `<button class="page-btn ${i === current ? 'page-btn-active' : ''}"
+                         onclick="(${callback.name || '('+callback.toString()+')'})(${i})">${i}</button>`;
+    }
+    container.innerHTML = html;
+}
+
+// ── Загрузка свободных слотов ────────────────────────────────────────────────
+function loadSlots() {
+    const doctorId = document.getElementById('appt-doctor').value;
+    const apptDate = document.getElementById('appt-date').value;
+    const timeSelect = document.getElementById('appt-time');
+    if (!doctorId || !apptDate) {
+        timeSelect.innerHTML = '<option value="">— сначала выберите врача и дату —</option>';
+        return;
+    }
+    timeSelect.innerHTML = '<option value="">Загрузка...</option>';
+    fetch(`/api/slots?doctor_id=${doctorId}&date=${apptDate}`)
+        .then(r => r.json())
+        .then(slots => {
+            if (!slots.length) { timeSelect.innerHTML = '<option value="">Нет свободных слотов</option>'; return; }
+            timeSelect.innerHTML = '<option value="">— выберите время —</option>' +
+                slots.map(s => `<option value="${s}">${s}</option>`).join('');
+        })
+        .catch(() => { timeSelect.innerHTML = '<option value="">Ошибка загрузки</option>'; });
+}
+
+// ── Печать истории лечения ───────────────────────────────────────────────────
+function printHistory() {
+    const section = document.getElementById('history');
+    if (!section) return;
+    const printWin = window.open('', '_blank', 'width=800,height=600');
+    printWin.document.write(`
+        <!DOCTYPE html><html lang="ru"><head>
+        <meta charset="UTF-8">
+        <title>История лечения — ORDENTIST CLINIC</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 32px; color: #15302a; }
+            h1 { font-size: 20px; margin-bottom: 4px; }
+            .meta { color: #5b6b67; font-size: 13px; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th { background: #f4f8f7; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e1ebe7; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+            td { padding: 10px 12px; border-bottom: 1px solid #e1ebe7; vertical-align: top; }
+            tr:last-child td { border-bottom: none; }
+            @media print { body { padding: 16px; } }
+        </style></head><body>
+        <h1>История лечения</h1>
+        <p class="meta">ORDENTIST CLINIC · Распечатано: ${new Date().toLocaleDateString('ru-RU')}</p>
+        <table>
+            <thead><tr><th>Дата</th><th>Диагноз</th><th>Лечение</th><th>Врач</th></tr></thead>
+            <tbody>
+                ${Array.from(section.querySelectorAll('.history-item')).map(item => {
+                    const date  = item.querySelector('.history-date')?.textContent.trim() || '—';
+                    const diag  = item.querySelector('.history-body strong')?.textContent.trim() || '—';
+                    const treat = item.querySelector('.history-body p')?.textContent.trim() || '—';
+                    const meta  = Array.from(item.querySelectorAll('.history-meta')).map(m => m.textContent.trim()).join(' · ');
+                    return `<tr><td>${date}</td><td>${diag}</td><td>${treat}</td><td>${meta}</td></tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 400);
+}
+</script>
+{% endblock %}

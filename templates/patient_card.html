@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}{{ patient.full_name }} — ORDENTIST CLINIC{% endblock %}
+{% block body_class %}cabinet-page{% endblock %}
+
+{% block content %}
+<div class="patient-card-page">
+
+    <div class="patient-card-header">
+        <a href="/cabinet#manage" class="patient-back">
+            <svg class="icon-sm"><use href="#i-chev-left"/></svg> Назад
+        </a>
+        <div class="patient-card-title">
+            <div class="patient-card-avatar">
+                {{ patient.first_name[0] if patient.first_name else '?' }}{{ patient.last_name[0] if patient.last_name else '' }}
+            </div>
+            <div>
+                <h1>{{ patient.full_name }}</h1>
+                <p class="patient-card-sub">
+                    {% if patient.birth_date %}Дата рождения: {{ patient.birth_date.strftime('%d.%m.%Y') }} · {% endif %}
+                    Телефон: {{ patient.phone or '—' }}
+                </p>
+            </div>
+        </div>
+        <button onclick="printPatientCard()" class="btn btn-ghost btn-print-card">
+            <svg class="icon-sm"><use href="#i-print"/></svg> Печать
+        </button>
+    </div>
+
+    <div class="patient-card-body" id="patient-card-print">
+
+        {# Статистика #}
+        <div class="patient-stats-row">
+            <div class="stat-card"><span>Всего визитов</span><strong>{{ appointments|length }}</strong></div>
+            <div class="stat-card"><span>Записей в истории</span><strong>{{ histories|length }}</strong></div>
+            <div class="stat-card"><span>Активных записей</span><strong>{{ appointments|selectattr('status','eq','scheduled')|list|length }}</strong></div>
+            <div class="stat-card"><span>Последний визит</span>
+                <strong>{% if histories %}{{ histories[0].date }}{% else %}—{% endif %}</strong>
+            </div>
+        </div>
+
+        {# Личные данные #}
+        <div class="patient-card-section">
+            <h2>Личные данные</h2>
+            <div class="profile-grid">
+                <div class="info-row"><span>ФИО</span><strong>{{ patient.full_name }}</strong></div>
+                <div class="info-row"><span>Телефон</span><strong>{{ patient.phone or '—' }}</strong></div>
+                <div class="info-row"><span>Дата рождения</span>
+                    <strong>{{ patient.birth_date.strftime('%d.%m.%Y') if patient.birth_date else '—' }}</strong>
+                </div>
+                <div class="info-row"><span>Email</span>
+                    <strong>{{ patient.user.email if patient.user else '—' }}</strong>
+                </div>
+            </div>
+        </div>
+
+        {# История лечения #}
+        <div class="patient-card-section">
+            <h2>История лечения</h2>
+            {% if histories %}
+            <div class="history-list">
+                {% for h in histories %}
+                <div class="history-item">
+                    <div class="history-date">{{ h.date }}</div>
+                    <div class="history-body">
+                        <strong>{{ h.diagnosis }}</strong>
+                        <p>{{ h.treatment }}</p>
+                        <p class="history-meta">Врач: {{ h.doctor }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="cabinet-empty">История лечения пуста.</p>
+            {% endif %}
+        </div>
+
+        {# Записи на приём #}
+        <div class="patient-card-section">
+            <h2>Записи на приём</h2>
+            {% if appointments %}
+            <div class="appointments-list">
+                {% for a in appointments %}
+                <div class="appointment-row {% if a.status == 'cancelled' %}appt-cancelled{% elif a.status == 'completed' %}appt-completed{% endif %}">
+                    <div class="appointment-when">
+                        <svg><use href="#i-calendar"/></svg>
+                        <div>
+                            <strong>{{ a.date }}</strong>
+                            <span>{{ a.time }}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-info">
+                        <strong>{{ a.service }}</strong>
+                        <span>{{ a.doctor }}{% if a.office != '—' %} · кабинет {{ a.office }}{% endif %}</span>
+                        <span class="appt-status appt-status-{{ a.status }}">
+                            {% if a.status == 'scheduled' %}Запланирован
+                            {% elif a.status == 'completed' %}Завершён
+                            {% elif a.status == 'cancelled' %}Отменён{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="cabinet-empty">Записей нет.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function printPatientCard() {
+    const content = document.getElementById('patient-card-print');
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`<!DOCTYPE html><html lang="ru"><head>
+        <meta charset="UTF-8"><title>Карточка пациента</title>
+        <style>
+            body{font-family:Arial,sans-serif;padding:32px;color:#15302a}
+            h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:24px 0 12px;border-bottom:2px solid #e1ebe7;padding-bottom:6px}
+            .sub{color:#5b6b67;font-size:13px;margin:0 0 24px}
+            .stats{display:flex;gap:16px;margin-bottom:24px}
+            .stat{background:#f4f8f7;padding:12px 16px;border-radius:8px;flex:1;text-align:center}
+            .stat span{display:block;font-size:11px;color:#5b6b67;text-transform:uppercase}
+            .stat strong{font-size:22px;font-weight:800;color:#1f9961}
+            .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+            .row{background:#f4f8f7;padding:10px 14px;border-radius:6px}
+            .row span{font-size:11px;color:#5b6b67;text-transform:uppercase;display:block}
+            .row strong{font-size:14px}
+            table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+            th{background:#f4f8f7;padding:8px 12px;text-align:left;border-bottom:2px solid #e1ebe7;font-size:11px;text-transform:uppercase}
+            td{padding:8px 12px;border-bottom:1px solid #e1ebe7;vertical-align:top}
+            @media print{body{padding:16px}}
+        </style></head><body>
+        ${content.innerHTML}
+        </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Вход — ORDENTIST CLINIC{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <a href="/" class="auth-brand">
+        <img src="/images/logo/logo.png" alt="">
+        <span>ORDENTIST CLINIC</span>
+    </a>
+
+    <div class="auth-card">
+        <h1>С возвращением</h1>
+        <p class="auth-sub">Войдите в личный кабинет, чтобы управлять записями и историей лечения.</p>
+
+        {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+
+        <form method="post" action="/login" class="auth-form">
+            <label>
+                <span>Телефон или e-mail</span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-user"/></svg>
+                    <input type="text" name="login" placeholder="+7 (___) ___-__-__" required>
+                </div>
+            </label>
+
+            <label>
+                <span>Пароль</span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-lock"/></svg>
+                    <input type="password" name="password" placeholder="Введите пароль" required>
+                </div>
+            </label>
+
+            <div class="auth-row">
+                <label class="checkbox">
+                    <input type="checkbox" name="remember">
+                    <span>Запомнить меня</span>
+                </label>
+                <a href="/forgot-password" class="auth-link">Забыли пароль?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Войти
+                <svg class="icon-sm"><use href="#i-arrow"/></svg>
+            </button>
+        </form>
+
+        <p class="auth-footer">
+            Нет аккаунта? <a href="/register" class="auth-link">Зарегистрироваться</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
