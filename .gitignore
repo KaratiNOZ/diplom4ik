@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Секреты (никогда не коммитить)
+.env
+*.env
+
+# Дипломные документы (по желанию)
+# ДИПЛОМ.docx
+# ДИАГРАММЫ/

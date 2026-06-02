@@ -311,9 +311,203 @@ def register_routes(app):
 
     # ── Личный кабинет ────────────────────────────────────────────────────────
 
+    def _cabinet_common_ctx(user):
+        """Общий контекст для всех страниц кабинета."""
+        notifications = []
+        if user.role == "patient" and user.patient_id:
+            upcoming = Appointment.query.filter_by(
+                patient_id=user.patient_id, status="scheduled"
+            ).filter(
+                Appointment.appointment_date >= date.today(),
+                Appointment.appointment_date <= date.today() + timedelta(days=2)
+            ).order_by(Appointment.appointment_date, Appointment.appointment_time).first()
+            if upcoming:
+                notifications.append({
+                    "type": "info",
+                    "text": f"Напоминание: у вас запись {upcoming.appointment_date.strftime('%d.%m.%Y')}"
+                            f" в {upcoming.appointment_time.strftime('%H:%M') if upcoming.appointment_time else '—'}"
+                            f" к врачу {upcoming.doctor.full_name if upcoming.doctor else '—'}."
+                })
+        elif user.role == "doctor" and user.doctor_id:
+            today_count = Appointment.query.filter_by(
+                doctor_id=user.doctor_id, status="scheduled"
+            ).filter(Appointment.appointment_date == date.today()).count()
+            if today_count:
+                notifications.append({
+                    "type": "info",
+                    "text": f"Сегодня у вас {today_count} запланированных приёмов."
+                })
+
+        user_ctx = {
+            "first_name": user.first_name,
+            "middle_name": user.middle_name,
+            "last_name": user.last_name,
+            "phone": user.phone or (user.patient.phone if user.patient else ""),
+            "email": user.email,
+            "role": user.role,
+            "role_label": user.role_label,
+            "experience": user.doctor.experience if user.doctor else None,
+            "qualification": user.doctor.qualification if user.doctor else None,
+            "photo": user.doctor.photo if user.doctor else None,
+        }
+        return {"user": user_ctx, "notifications": notifications}
+
     @app.route("/cabinet")
     @login_required
     def cabinet():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+
+        appts_q = Appointment.query
+        if user.role == "patient" and user.patient_id:
+            appts_q = appts_q.filter_by(patient_id=user.patient_id)
+        elif user.role == "doctor" and user.doctor_id:
+            appts_q = appts_q.filter_by(doctor_id=user.doctor_id)
+        appointments = [_appt_to_dict(a) for a in
+                        appts_q.order_by(Appointment.appointment_date,
+                                         Appointment.appointment_time).limit(30).all()]
+
+        if user.role == "patient" and user.patient_id:
+            update_achievements(user.patient_id)
+
+        stats = _build_stats(user, appointments)
+        ctx.update({
+            "stats": stats,
+            "active_page": "dashboard",
+        })
+        return render_template("cabinet_dashboard.html", **ctx)
+
+    @app.route("/cabinet/profile")
+    @login_required
+    def cabinet_profile():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+        ctx["active_page"] = "profile"
+        return render_template("cabinet_profile.html", **ctx)
+
+    @app.route("/cabinet/appointments")
+    @login_required
+    def cabinet_appointments():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+
+        appts_q = Appointment.query
+        if user.role == "patient" and user.patient_id:
+            appts_q = appts_q.filter_by(patient_id=user.patient_id)
+        elif user.role == "doctor" and user.doctor_id:
+            appts_q = appts_q.filter_by(doctor_id=user.doctor_id)
+        appointments = [_appt_to_dict(a) for a in
+                        appts_q.order_by(Appointment.appointment_date,
+                                         Appointment.appointment_time).limit(50).all()]
+
+        doctors = Doctor.query.order_by(Doctor.last_name).all()
+        offices = Office.query.order_by(Office.office_number).all()
+        services = Service.query.order_by(Service.name).all()
+        patients = Patient.query.order_by(Patient.last_name).all() \
+            if user.role in ("manager", "admin", "doctor") else []
+
+        ctx.update({
+            "appointments": appointments,
+            "doctors": doctors,
+            "offices": offices,
+            "services": services,
+            "patients": patients,
+            "today_iso": date.today().isoformat(),
+            "active_page": "appointments",
+        })
+        return render_template("cabinet_appointments.html", **ctx)
+
+    @app.route("/cabinet/history")
+    @login_required
+    def cabinet_history():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+
+        histories = []
+        hq = MedicalHistory.query
+        if user.role == "patient" and user.patient_id:
+            hq = hq.filter_by(patient_id=user.patient_id)
+        elif user.role == "doctor" and user.doctor_id:
+            hq = hq.filter_by(doctor_id=user.doctor_id)
+        for h in hq.order_by(MedicalHistory.visit_date.desc()).limit(50).all():
+            histories.append({
+                "id": h.id_history,
+                "date": h.visit_date.strftime("%d.%m.%Y") if h.visit_date else "—",
+                "diagnosis": h.diagnosis or "—",
+                "treatment": h.treatment or "—",
+                "doctor": h.doctor.full_name if h.doctor else "—",
+                "patient": h.patient.full_name if h.patient else "—",
+            })
+
+        doctors = Doctor.query.order_by(Doctor.last_name).all() \
+            if user.role in ("manager", "admin") else []
+        patients = Patient.query.order_by(Patient.last_name).all() \
+            if user.role in ("manager", "admin", "doctor") else []
+
+        ctx.update({
+            "histories": histories,
+            "doctors": doctors,
+            "patients": patients,
+            "active_page": "history",
+        })
+        return render_template("cabinet_history.html", **ctx)
+
+    @app.route("/cabinet/achievements")
+    @login_required
+    def cabinet_achievements():
+        user = current_user()
+        if user.role != "patient":
+            flash("Достижения доступны только для пациентов.", "error")
+            return redirect(url_for("cabinet"))
+        ctx = _cabinet_common_ctx(user)
+        if user.patient_id:
+            update_achievements(user.patient_id)
+            achievements = get_patient_achievements(user.patient_id)
+        else:
+            achievements = []
+        ctx.update({
+            "achievements": achievements,
+            "active_page": "achievements",
+        })
+        return render_template("cabinet_achievements.html", **ctx)
+
+    @app.route("/cabinet/manage")
+    @login_required
+    def cabinet_manage():
+        user = current_user()
+        if user.role not in ("manager", "admin"):
+            flash("Недостаточно прав.", "error")
+            return redirect(url_for("cabinet"))
+        ctx = _cabinet_common_ctx(user)
+        ctx["active_page"] = "manage"
+        return render_template("cabinet_manage.html", **ctx)
+
+    @app.route("/cabinet/prices")
+    @login_required
+    def cabinet_prices():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+        price_categories = {}
+        for s in Service.query.order_by(Service.category, Service.name).all():
+            cat = s.category or "Прочее"
+            price_categories.setdefault(cat, []).append(s)
+        ctx.update({
+            "price_categories": price_categories,
+            "active_page": "prices",
+        })
+        return render_template("cabinet_prices.html", **ctx)
+
+    @app.route("/cabinet/settings")
+    @login_required
+    def cabinet_settings():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+        ctx["active_page"] = "settings"
+        return render_template("cabinet_settings.html", **ctx)
+
+    @app.route("/cabinet/legacy")
+    @login_required
+    def cabinet_legacy():
         user = current_user()
 
         # Уведомление о ближайшем приёме
@@ -424,14 +618,14 @@ def register_routes(app):
         appt = Appointment.query.get_or_404(appt_id)
         if user.role == "doctor" and appt.doctor_id != user.doctor_id:
             flash("Нет доступа.", "error")
-            return redirect(url_for("cabinet") + "#appointments")
+            return redirect(url_for("cabinet_appointments"))
         if user.role not in ("doctor", "manager", "admin"):
             flash("Нет доступа.", "error")
-            return redirect(url_for("cabinet") + "#appointments")
+            return redirect(url_for("cabinet_appointments"))
         appt.status = "completed"
         db.session.commit()
         flash("Приём завершён.", "success")
-        return redirect(url_for("cabinet") + "#appointments")
+        return redirect(url_for("cabinet_appointments"))
 
     # ── Новая запись ──────────────────────────────────────────────────────────
 
@@ -456,7 +650,7 @@ def register_routes(app):
         patient_id = user.patient_id if user.role == "patient" else (f.get("patient_id") or None)
         if not patient_id or not appt_date:
             flash("Заполните обязательные поля: пациент и дата.", "error")
-            return redirect(url_for("cabinet") + "#new-appointment")
+            return redirect(url_for("cabinet_appointments"))
         db.session.add(Appointment(
             patient_id=patient_id, doctor_id=doctor_id, office_id=office_id,
             service_id=service_id, appointment_date=appt_date,
@@ -464,7 +658,7 @@ def register_routes(app):
         ))
         db.session.commit()
         flash("Запись успешно создана.", "success")
-        return redirect(url_for("cabinet") + "#appointments")
+        return redirect(url_for("cabinet_appointments"))
 
     # ── Отмена записи ─────────────────────────────────────────────────────────
 
@@ -475,11 +669,11 @@ def register_routes(app):
         appt = Appointment.query.get_or_404(appt_id)
         if user.role == "patient" and appt.patient_id != user.patient_id:
             flash("Нет доступа.", "error")
-            return redirect(url_for("cabinet") + "#appointments")
+            return redirect(url_for("cabinet_appointments"))
         appt.status = "cancelled"
         db.session.commit()
         flash("Запись отменена.", "success")
-        return redirect(url_for("cabinet") + "#appointments")
+        return redirect(url_for("cabinet_appointments"))
 
     # ── История лечения ───────────────────────────────────────────────────────
 
@@ -494,7 +688,7 @@ def register_routes(app):
         visit_date = _parse_date(f.get("visit_date"))
         if not patient_id or not visit_date:
             flash("Заполните обязательные поля.", "error")
-            return redirect(url_for("cabinet") + "#history")
+            return redirect(url_for("cabinet_history"))
         db.session.add(MedicalHistory(
             patient_id=patient_id, doctor_id=doctor_id,
             diagnosis=f.get("diagnosis", "").strip(),
@@ -504,7 +698,7 @@ def register_routes(app):
         db.session.commit()
         update_achievements(int(patient_id))
         flash("Запись в историю добавлена.", "success")
-        return redirect(url_for("cabinet") + "#history")
+        return redirect(url_for("cabinet_history"))
 
     # ── Профиль ───────────────────────────────────────────────────────────────
 
@@ -529,13 +723,13 @@ def register_routes(app):
         if new_email and new_email != user.email:
             if User.query.filter_by(email=new_email).first():
                 flash("Этот email уже занят.", "error")
-                return redirect(url_for("cabinet") + "#profile")
+                return redirect(url_for("cabinet_profile"))
             user.email = new_email
         if f.get("phone"):
             user.phone = f.get("phone")
         db.session.commit()
         flash("Профиль обновлён.", "success")
-        return redirect(url_for("cabinet") + "#profile")
+        return redirect(url_for("cabinet_profile"))
 
     # ── Загрузка фото врача ───────────────────────────────────────────────────
 
@@ -545,21 +739,21 @@ def register_routes(app):
         user = current_user()
         if not user.doctor:
             flash("Только врачи могут загружать фото.", "error")
-            return redirect(url_for("cabinet") + "#profile")
+            return redirect(url_for("cabinet_profile"))
         file = request.files.get("photo")
         if not file or file.filename == "":
             flash("Файл не выбран.", "error")
-            return redirect(url_for("cabinet") + "#profile")
+            return redirect(url_for("cabinet_profile"))
         if not allowed_file(file.filename):
             flash("Допустимые форматы: PNG, JPG, JPEG, WEBP.", "error")
-            return redirect(url_for("cabinet") + "#profile")
+            return redirect(url_for("cabinet_profile"))
         ext = file.filename.rsplit(".", 1)[1].lower()
         filename = secure_filename(f"doctor_{user.doctor_id}.{ext}")
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
         user.doctor.photo = filename
         db.session.commit()
         flash("Фото обновлено.", "success")
-        return redirect(url_for("cabinet") + "#profile")
+        return redirect(url_for("cabinet_profile"))
 
     # ── Смена пароля ──────────────────────────────────────────────────────────
 
@@ -570,18 +764,18 @@ def register_routes(app):
         f = request.form
         if not user.check_password(f.get("old_password", "")):
             flash("Неверный текущий пароль.", "error")
-            return redirect(url_for("cabinet") + "#settings")
+            return redirect(url_for("cabinet_settings"))
         pw = f.get("new_password", "")
         if len(pw) < 6:
             flash("Новый пароль — минимум 6 символов.", "error")
-            return redirect(url_for("cabinet") + "#settings")
+            return redirect(url_for("cabinet_settings"))
         if pw != f.get("new_password2", ""):
             flash("Пароли не совпадают.", "error")
-            return redirect(url_for("cabinet") + "#settings")
+            return redirect(url_for("cabinet_settings"))
         user.set_password(pw)
         db.session.commit()
         flash("Пароль изменён.", "success")
-        return redirect(url_for("cabinet") + "#settings")
+        return redirect(url_for("cabinet_settings"))
 
     # ── API: слоты ────────────────────────────────────────────────────────────
 
@@ -669,10 +863,10 @@ def register_routes(app):
         email = f.get("email", "").strip()
         if not email:
             flash("Email обязателен.", "error")
-            return redirect(url_for("cabinet") + "#manage")
+            return redirect(url_for("cabinet_manage"))
         if User.query.filter_by(email=email).first():
             flash("Пользователь с таким email уже существует.", "error")
-            return redirect(url_for("cabinet") + "#manage")
+            return redirect(url_for("cabinet_manage"))
 
         # Роль: admin может выбрать любую, менеджер — только doctor
         cur = current_user()
@@ -702,7 +896,7 @@ def register_routes(app):
 
         name = doctor.full_name if doctor else email
         flash(f"Сотрудник {name} добавлен с ролью «{role_override}».", "success")
-        return redirect(url_for("cabinet") + "#manage")
+        return redirect(url_for("cabinet_manage"))
 
     # ── Управление: удалить пользователя (только admin) ──────────────────────
 
@@ -713,12 +907,12 @@ def register_routes(app):
         user = current_user()
         if uid == user.id_user:
             flash("Нельзя удалить себя.", "error")
-            return redirect(url_for("cabinet") + "#manage")
+            return redirect(url_for("cabinet_manage"))
         u = User.query.get_or_404(uid)
         db.session.delete(u)
         db.session.commit()
         flash("Пользователь удалён.", "success")
-        return redirect(url_for("cabinet") + "#manage")
+        return redirect(url_for("cabinet_manage"))
 
     # ── Управление: список всех пользователей (admin) ────────────────────────
 

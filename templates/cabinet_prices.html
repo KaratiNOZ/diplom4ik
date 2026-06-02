@@ -1,0 +1,88 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Прайс-лист — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>Прайс-лист</h1>
+        <p class="cabinet-greeting">Актуальные цены на все услуги клиники. Консультация — бесплатно.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-prices">
+    <h2 class="cabinet-section-title"><svg><use href="#i-tag"/></svg> Прайс-лист</h2>
+    <p class="cabinet-section-sub">Актуальные цены на все услуги клиники. Консультация — бесплатно.</p>
+
+    <div class="manage-search" style="margin-bottom:24px;max-width:420px;">
+        <svg class="icon-sm"><use href="#i-search"/></svg>
+        <input type="text" id="cab-prices-search" placeholder="Поиск по названию услуги...">
+    </div>
+
+    <div class="prices-cards-grid" id="prices-cards-grid">
+        {% for cat, cat_services in price_categories.items() %}
+        <div class="price-category-card" data-cat="{{ cat }}">
+            <div class="price-category-header">
+                <svg class="icon-sm"><use href="#i-tooth"/></svg>
+                <h3>{{ cat }}</h3>
+                <span class="price-category-count">{{ cat_services|length }} услуг</span>
+            </div>
+            <ul class="price-services-list">
+                {% for s in cat_services %}
+                <li class="price-service-item" data-name="{{ s.name|lower }}">
+                    <span class="price-service-name">{{ s.name }}</span>
+                    <span class="price-service-price">
+                        {% if s.price and s.price > 0 %}
+                            {{ s.price|int }} ₽
+                        {% else %}
+                            <span class="price-free">Бесплатно</span>
+                        {% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="cab-prices-empty" class="cabinet-empty" style="display:none;">
+        Услуги не найдены.
+    </div>
+
+    <div class="prices-note" style="margin-top:24px;">
+        <svg><use href="#i-check"/></svg>
+        <p>Цены указаны за одну процедуру. Точная стоимость определяется после осмотра врача.
+           Пенсионерам и детям до 14 лет — скидка 10%.</p>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cabPricesSearch = document.getElementById('cab-prices-search');
+    if (cabPricesSearch) {
+        cabPricesSearch.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.price-category-card');
+            let anyVisible = false;
+            cards.forEach(card => {
+                const items = card.querySelectorAll('.price-service-item');
+                let cardVisible = false;
+                items.forEach(item => {
+                    const match = !q || item.dataset.name.includes(q);
+                    item.style.display = match ? '' : 'none';
+                    if (match) cardVisible = true;
+                });
+                card.style.display = cardVisible ? '' : 'none';
+                if (cardVisible) anyVisible = true;
+            });
+            const empty = document.getElementById('cab-prices-empty');
+            if (empty) empty.style.display = anyVisible ? 'none' : 'block';
+        });
+    }
+});
+</script>
+{% endblock %}

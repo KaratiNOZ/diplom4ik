@@ -47,8 +47,14 @@
         <a href="/prices" style="color:var(--color-primary-dark);font-weight:700;">Цены</a>
         <a href="/about">О нас</a>
         <span class="nav-divider"></span>
+        {% if logged_in %}
+        <a href="/cabinet" class="nav-auth nav-auth-primary">
+            <svg class="icon-sm"><use href="#i-user"/></svg> Личный кабинет
+        </a>
+        {% else %}
         <a href="/login" class="nav-auth"><svg class="icon-sm"><use href="#i-user"/></svg> Войти</a>
         <a href="/register" class="nav-auth nav-auth-primary">Регистрация</a>
+        {% endif %}
     </nav>
 </header>
 

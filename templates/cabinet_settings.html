@@ -1,0 +1,66 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Настройки — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>Настройки</h1>
+        <p class="cabinet-greeting">Управление безопасностью аккаунта.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-settings">
+    <h2 class="cabinet-section-title"><svg><use href="#i-settings"/></svg> Настройки</h2>
+
+    <h3 class="manage-subtitle">Смена пароля</h3>
+    <form method="post" action="/cabinet/password/change" class="cabinet-form" id="pw-form">
+        <label>
+            <span>Текущий пароль</span>
+            <div class="input-with-icon">
+                <svg class="icon-sm"><use href="#i-lock"/></svg>
+                <input type="password" name="old_password" required>
+            </div>
+        </label>
+        <div class="form-row-2">
+            <label>
+                <span>Новый пароль</span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-lock"/></svg>
+                    <input type="password" name="new_password" placeholder="Минимум 6 символов" required>
+                </div>
+            </label>
+            <label>
+                <span>Повторите новый пароль</span>
+                <div class="input-with-icon">
+                    <svg class="icon-sm"><use href="#i-lock"/></svg>
+                    <input type="password" name="new_password2" required>
+                </div>
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Изменить пароль</button>
+    </form>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const pwForm = document.getElementById('pw-form');
+    if (pwForm) {
+        pwForm.addEventListener('submit', function (e) {
+            const np  = pwForm.querySelector('[name="new_password"]');
+            const np2 = pwForm.querySelector('[name="new_password2"]');
+            let ok = true;
+            if (np && np.value.length < 6) { np.classList.add('input-invalid'); ok = false; }
+            else if (np) np.classList.remove('input-invalid');
+            if (np && np2 && np.value !== np2.value) { np2.classList.add('input-invalid'); ok = false; }
+            else if (np2) np2.classList.remove('input-invalid');
+            if (!ok) e.preventDefault();
+        });
+    }
+});
+</script>
+{% endblock %}

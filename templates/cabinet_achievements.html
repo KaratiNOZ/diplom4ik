@@ -1,0 +1,39 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Достижения — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>Достижения</h1>
+        <p class="cabinet-greeting">Получайте награды за визиты к стоматологу.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-achievements">
+    <h2 class="cabinet-section-title">
+        <svg><use href="#i-trophy"/></svg> Достижения
+    </h2>
+    <p class="cabinet-section-sub">Получайте награды за визиты к стоматологу. Прогресс обновляется автоматически!</p>
+
+    <div class="achievements-grid">
+        {% for ach in achievements %}
+        <div class="achievement {% if ach.unlocked %}unlocked{% else %}locked{% endif %}">
+            <div class="achievement-icon">
+                <svg><use href="#{{ ach.icon }}"/></svg>
+                {% if ach.unlocked %}<span class="achievement-check"><svg><use href="#i-check"/></svg></span>{% endif %}
+            </div>
+            <h4>{{ ach.title }}</h4>
+            <p>{{ ach.desc }}</p>
+            <div class="achievement-progress">
+                <div class="achievement-bar">
+                    <div class="achievement-fill" style="width: {{ ((ach.progress / ach.total) * 100)|round if ach.total else 0 }}%"></div>
+                </div>
+                <span>{{ ach.progress }} / {{ ach.total }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Личный кабинет — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+{% set role = user.role %}
+
+{# Шапка #}
+<header class="cabinet-header">
+    <div>
+        <h1>Здравствуйте, {{ user.first_name or 'друг' }}!</h1>
+        <p class="cabinet-greeting">
+            {% if role == 'patient' %}Заботьтесь о здоровье — каждый визит приближает к новой ачивке.{% endif %}
+            {% if role == 'doctor' %}Сегодня запланировано {{ stats.today }} приём(ов).{% endif %}
+            {% if role == 'manager' %}Сводка по клинике на сегодня.{% endif %}
+            {% if role == 'admin' %}Панель администратора системы.{% endif %}
+        </p>
+    </div>
+    {% if role == 'patient' %}
+    <a href="/cabinet/appointments" class="btn btn-primary">
+        <svg class="icon-sm"><use href="#i-calendar"/></svg>
+        Записаться
+    </a>
+    {% endif %}
+</header>
+
+{# ===== Статистика ===== #}
+<section class="cabinet-stats">
+    {% if role == 'patient' %}
+        <div class="stat-card"><span>Визитов</span><strong>{{ stats.visits }}</strong></div>
+        <div class="stat-card"><span>Записей в истории</span><strong>{{ stats.teeth_healed }}</strong></div>
+        <div class="stat-card"><span>Ачивок</span><strong>{{ stats.achievements }}</strong></div>
+        <div class="stat-card"><span>Следующий приём</span><strong>{{ stats.next_appt }}</strong></div>
+    {% elif role == 'doctor' %}
+        <div class="stat-card"><span>Приёмов сегодня</span><strong>{{ stats.today }}</strong></div>
+        <div class="stat-card"><span>Пациентов всего</span><strong>{{ stats.total_patients }}</strong></div>
+        <div class="stat-card"><span>Стаж</span><strong>{{ stats.experience }} лет</strong></div>
+        <div class="stat-card"><span>Рейтинг</span><strong>{{ stats.rating }} ★</strong></div>
+    {% elif role == 'manager' %}
+        <div class="stat-card"><span>Записей сегодня</span><strong>{{ stats.today_appts }}</strong></div>
+        <div class="stat-card"><span>Врачей</span><strong>{{ stats.total_doctors }}</strong></div>
+        <div class="stat-card"><span>Пациентов</span><strong>{{ stats.total_patients }}</strong></div>
+        <div class="stat-card"><span>Кабинетов</span><strong>{{ stats.offices }}</strong></div>
+    {% elif role == 'admin' %}
+        <div class="stat-card"><span>Пользователей</span><strong>{{ stats.users }}</strong></div>
+        <div class="stat-card"><span>Врачей</span><strong>{{ stats.doctors }}</strong></div>
+        <div class="stat-card"><span>Пациентов</span><strong>{{ stats.patients }}</strong></div>
+        <div class="stat-card"><span>Записей</span><strong>{{ stats.appointments }}</strong></div>
+    {% endif %}
+</section>
+
+{# Быстрые ссылки #}
+<div class="dashboard-quick-links">
+    <a href="/cabinet/profile" class="quick-link-card">
+        <svg><use href="#i-user"/></svg>
+        <span>Профиль</span>
+    </a>
+    <a href="/cabinet/appointments" class="quick-link-card">
+        <svg><use href="#i-calendar"/></svg>
+        <span>Записи</span>
+    </a>
+    <a href="/cabinet/history" class="quick-link-card">
+        <svg><use href="#i-list"/></svg>
+        <span>История</span>
+    </a>
+    {% if role == 'patient' %}
+    <a href="/cabinet/achievements" class="quick-link-card">
+        <svg><use href="#i-trophy"/></svg>
+        <span>Достижения</span>
+    </a>
+    {% endif %}
+    {% if role in ['manager', 'admin'] %}
+    <a href="/cabinet/manage" class="quick-link-card">
+        <svg><use href="#i-settings"/></svg>
+        <span>Управление</span>
+    </a>
+    {% endif %}
+    <a href="/cabinet/prices" class="quick-link-card">
+        <svg><use href="#i-tag"/></svg>
+        <span>Прайс-лист</span>
+    </a>
+    <a href="/cabinet/settings" class="quick-link-card">
+        <svg><use href="#i-settings"/></svg>
+        <span>Настройки</span>
+    </a>
+</div>
+{% endblock %}

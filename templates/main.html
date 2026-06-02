@@ -98,6 +98,11 @@
             <symbol id="i-chev-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"/>
             </symbol>
+            <!-- user -->
+            <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </symbol>
         </defs>
     </svg>
 
@@ -128,11 +133,18 @@
 
             <span class="nav-divider"></span>
 
+            {% if logged_in %}
+            <a href="/cabinet" class="nav-auth nav-auth-primary">
+                <svg class="icon-sm"><use href="#i-user"/></svg>
+                Личный кабинет
+            </a>
+            {% else %}
             <a href="/login" class="nav-auth">
                 <svg class="icon-sm"><use href="#i-user"/></svg>
                 Войти
             </a>
             <a href="/register" class="nav-auth nav-auth-primary">Регистрация</a>
+            {% endif %}
         </nav>
     </header>
 

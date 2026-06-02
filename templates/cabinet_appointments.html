@@ -1,0 +1,281 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Мои записи — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+{% set role = user.role %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>{% if role == 'doctor' %}Расписание приёмов{% else %}Мои записи{% endif %}</h1>
+        <p class="cabinet-greeting">Управляйте своими записями на приём.</p>
+    </div>
+    {% if role == 'patient' %}
+    <a href="#new-appointment" class="btn btn-primary"
+       onclick="document.getElementById('new-appointment').scrollIntoView({behavior:'smooth'});return false;">
+        <svg class="icon-sm"><use href="#i-calendar"/></svg>
+        Записаться
+    </a>
+    {% endif %}
+</header>
+
+{# ===== Записи на приём ===== #}
+<section class="cabinet-section section-appointments">
+    <h2 class="cabinet-section-title">
+        <svg><use href="#i-calendar"/></svg>
+        {% if role == 'doctor' %}Расписание приёмов{% else %}Мои записи{% endif %}
+    </h2>
+
+    <div class="appt-filter-row">
+        <label class="appt-filter-label">
+            <span>С</span>
+            <input type="date" id="filter-date-from" class="appt-filter-input">
+        </label>
+        <label class="appt-filter-label">
+            <span>По</span>
+            <input type="date" id="filter-date-to" class="appt-filter-input">
+        </label>
+        <select id="filter-status" class="appt-filter-input">
+            <option value="">Все статусы</option>
+            <option value="scheduled">Запланированные</option>
+            <option value="completed">Завершённые</option>
+            <option value="cancelled">Отменённые</option>
+        </select>
+        <button type="button" class="btn-mini" id="filter-reset">Сбросить</button>
+    </div>
+
+    {% if appointments %}
+        <div class="appointments-list">
+            {% for a in appointments %}
+            <div class="appointment-row {% if a.status == 'cancelled' %}appt-cancelled{% elif a.status == 'completed' %}appt-completed{% endif %}"
+                 data-date="{{ a.date_iso }}" data-status="{{ a.status }}">
+                <div class="appointment-when">
+                    <svg><use href="#i-calendar"/></svg>
+                    <div>
+                        <strong>{{ a.date }}</strong>
+                        <span>{{ a.time }}</span>
+                    </div>
+                </div>
+                <div class="appointment-info">
+                    <strong>{{ a.service }}</strong>
+                    <span>
+                        {% if role == 'doctor' %}Пациент: {{ a.patient }}{% else %}{{ a.doctor }}{% endif %}
+                        {% if a.office != '—' %} · кабинет {{ a.office }}{% endif %}
+                    </span>
+                    <span class="appt-status appt-status-{{ a.status }}">
+                        {% if a.status == 'scheduled' %}Запланирован
+                        {% elif a.status == 'completed' %}Завершён
+                        {% elif a.status == 'cancelled' %}Отменён
+                        {% else %}{{ a.status }}{% endif %}
+                    </span>
+                </div>
+                <div class="appointment-actions">
+                    {% if a.status == 'scheduled' %}
+                    <form method="post" action="/cabinet/appointment/{{ a.id }}/cancel"
+                          onsubmit="return confirm('Отменить запись?');" style="display:inline;">
+                        <button type="submit" class="btn-mini btn-danger">Отменить</button>
+                    </form>
+                    {% if role in ['doctor', 'manager', 'admin'] %}
+                    <form method="post" action="/cabinet/appointment/{{ a.id }}/complete"
+                          onsubmit="return confirm('Завершить приём?');" style="display:inline;margin-left:6px;">
+                        <button type="submit" class="btn-mini btn-complete">Завершить</button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p id="appt-empty-msg" class="cabinet-empty" style="display:none;">Записей по фильтру не найдено.</p>
+    {% else %}
+        <p class="cabinet-empty">Записей пока нет.</p>
+    {% endif %}
+</section>
+
+{# ===== Форма новой записи (только для пациента) ===== #}
+{% if role == 'patient' %}
+<section class="cabinet-section section-new-appt" id="new-appointment">
+    <h2 class="cabinet-section-title"><svg><use href="#i-calendar"/></svg> Записаться на приём</h2>
+    <form method="post" action="/cabinet/appointment/new" class="cabinet-form">
+        <div class="form-row-2">
+            <label>
+                <span>Врач</span>
+                <select name="doctor_id" id="appt-doctor" onchange="loadSlots()">
+                    <option value="">— выберите врача —</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.id_doctor }}">{{ d.full_name }} ({{ d.qualification or '' }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>Услуга</span>
+                <select name="service_id">
+                    <option value="">— выберите услугу —</option>
+                    {% for s in services %}
+                    <option value="{{ s.id_service }}">{{ s.name }}{% if s.price %} — {{ s.price|int }} ₽{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <div class="form-row-2">
+            <label>
+                <span>Дата <span class="req">*</span></span>
+                <input type="date" name="appointment_date" id="appt-date"
+                       min="{{ today_iso }}" required onchange="loadSlots()">
+            </label>
+            <label>
+                <span>Время</span>
+                <select name="appointment_time" id="appt-time">
+                    <option value="">— сначала выберите врача и дату —</option>
+                </select>
+            </label>
+        </div>
+        <div class="form-row-2">
+            <label>
+                <span>Кабинет</span>
+                <select name="office_id">
+                    <option value="">— любой —</option>
+                    {% for o in offices %}
+                    <option value="{{ o.id_office }}">Кабинет № {{ o.office_number }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <svg class="icon-sm"><use href="#i-calendar"/></svg>
+            Создать запись
+        </button>
+    </form>
+</section>
+{% endif %}
+
+{# Форма записи для врача/менеджера/админа #}
+{% if role in ['doctor', 'manager', 'admin'] %}
+<section class="cabinet-section section-new-appt" id="new-appointment">
+    <h2 class="cabinet-section-title"><svg><use href="#i-calendar"/></svg> Создать запись</h2>
+    <form method="post" action="/cabinet/appointment/new" class="cabinet-form">
+        <div class="form-row-2">
+            <label>
+                <span>Врач</span>
+                <select name="doctor_id" id="appt-doctor" onchange="loadSlots()">
+                    <option value="">— выберите врача —</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.id_doctor }}">{{ d.full_name }} ({{ d.qualification or '' }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>Услуга</span>
+                <select name="service_id">
+                    <option value="">— выберите услугу —</option>
+                    {% for s in services %}
+                    <option value="{{ s.id_service }}">{{ s.name }}{% if s.price %} — {{ s.price|int }} ₽{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <div class="form-row-2">
+            <label>
+                <span>Дата <span class="req">*</span></span>
+                <input type="date" name="appointment_date" id="appt-date"
+                       min="{{ today_iso }}" required onchange="loadSlots()">
+            </label>
+            <label>
+                <span>Время</span>
+                <select name="appointment_time" id="appt-time">
+                    <option value="">— сначала выберите врача и дату —</option>
+                </select>
+            </label>
+        </div>
+        <div class="form-row-2">
+            <label>
+                <span>Кабинет</span>
+                <select name="office_id">
+                    <option value="">— любой —</option>
+                    {% for o in offices %}
+                    <option value="{{ o.id_office }}">Кабинет № {{ o.office_number }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>Пациент <span class="req">*</span></span>
+                <select name="patient_id" required>
+                    <option value="">— выберите пациента —</option>
+                    {% for p in patients %}
+                    <option value="{{ p.id_patient }}">{{ p.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <svg class="icon-sm"><use href="#i-calendar"/></svg>
+            Создать запись
+        </button>
+    </form>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.getElementById('appt-date');
+    if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+
+    const filterFrom   = document.getElementById('filter-date-from');
+    const filterTo     = document.getElementById('filter-date-to');
+    const filterStatus = document.getElementById('filter-status');
+    const filterReset  = document.getElementById('filter-reset');
+    const apptRows     = document.querySelectorAll('.appointment-row[data-date]');
+
+    function applyApptFilter() {
+        const from   = filterFrom   ? filterFrom.value   : '';
+        const to     = filterTo     ? filterTo.value     : '';
+        const status = filterStatus ? filterStatus.value : '';
+        let visible = 0;
+        apptRows.forEach(row => {
+            const d = row.dataset.date;
+            const s = row.dataset.status;
+            const okDate   = (!from || d >= from) && (!to || d <= to);
+            const okStatus = !status || s === status;
+            row.style.display = (okDate && okStatus) ? '' : 'none';
+            if (okDate && okStatus) visible++;
+        });
+        const empty = document.getElementById('appt-empty-msg');
+        if (empty) empty.style.display = visible === 0 ? '' : 'none';
+    }
+
+    if (filterFrom)   filterFrom.addEventListener('change', applyApptFilter);
+    if (filterTo)     filterTo.addEventListener('change', applyApptFilter);
+    if (filterStatus) filterStatus.addEventListener('change', applyApptFilter);
+    if (filterReset) {
+        filterReset.addEventListener('click', () => {
+            if (filterFrom)   filterFrom.value = '';
+            if (filterTo)     filterTo.value = '';
+            if (filterStatus) filterStatus.value = '';
+            applyApptFilter();
+        });
+    }
+});
+
+function loadSlots() {
+    const doctorId = document.getElementById('appt-doctor').value;
+    const apptDate = document.getElementById('appt-date').value;
+    const timeSelect = document.getElementById('appt-time');
+    if (!doctorId || !apptDate) {
+        timeSelect.innerHTML = '<option value="">— сначала выберите врача и дату —</option>';
+        return;
+    }
+    timeSelect.innerHTML = '<option value="">Загрузка...</option>';
+    fetch(`/api/slots?doctor_id=${doctorId}&date=${apptDate}`)
+        .then(r => r.json())
+        .then(slots => {
+            if (!slots.length) { timeSelect.innerHTML = '<option value="">Нет свободных слотов</option>'; return; }
+            timeSelect.innerHTML = '<option value="">— выберите время —</option>' +
+                slots.map(s => `<option value="${s}">${s}</option>`).join('');
+        })
+        .catch(() => { timeSelect.innerHTML = '<option value="">Ошибка загрузки</option>'; });
+}
+</script>
+{% endblock %}

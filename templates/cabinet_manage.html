@@ -1,0 +1,272 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Управление — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+{% set role = user.role %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>Управление</h1>
+        <p class="cabinet-greeting">Управление записями, пациентами и сотрудниками клиники.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-manage">
+    <h2 class="cabinet-section-title"><svg><use href="#i-settings"/></svg> Управление</h2>
+
+    <h3 class="manage-subtitle">Все записи на приём</h3>
+    <div class="manage-search-row">
+        <div class="manage-search">
+            <svg class="icon-sm"><use href="#i-search"/></svg>
+            <input type="text" id="appts-search" placeholder="Поиск по пациенту или врачу...">
+        </div>
+        <select id="appts-status-filter" class="manage-filter-select">
+            <option value="">Все статусы</option>
+            <option value="scheduled">Запланированные</option>
+            <option value="completed">Завершённые</option>
+            <option value="cancelled">Отменённые</option>
+        </select>
+    </div>
+    <div class="table-wrapper" style="margin-bottom:32px;">
+        <table class="data-table">
+            <thead>
+                <tr><th>Дата</th><th>Время</th><th>Пациент</th><th>Врач</th><th>Услуга</th><th>Статус</th></tr>
+            </thead>
+            <tbody id="appts-tbody">
+                <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination" id="appts-pagination"></div>
+
+    <h3 class="manage-subtitle">Пациенты клиники</h3>
+    <div class="manage-search-row">
+        <div class="manage-search">
+            <svg class="icon-sm"><use href="#i-search"/></svg>
+            <input type="text" id="patients-search" placeholder="Поиск по имени или телефону...">
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>#</th><th>ФИО</th><th>Телефон</th><th>Дата рождения</th><th>Визитов</th><th>Последний визит</th></tr>
+            </thead>
+            <tbody id="patients-tbody">
+                <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination" id="patients-pagination"></div>
+
+    {% if role == 'admin' %}
+    <h3 class="manage-subtitle" style="margin-top:32px;">Все пользователи системы</h3>
+    <div class="table-wrapper" style="margin-bottom:32px;">
+        <table class="data-table">
+            <thead>
+                <tr><th>#</th><th>ФИО / Email</th><th>Телефон</th><th>Роль</th><th>Дата регистрации</th><th>Действие</th></tr>
+            </thead>
+            <tbody id="users-tbody">
+                <tr><td colspan="6" class="table-loading">Загрузка...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <h3 class="manage-subtitle">Добавить сотрудника</h3>
+    <details class="cabinet-details">
+        <summary class="cabinet-details-toggle">Открыть форму</summary>
+        <form method="post" action="/cabinet/doctor/add" class="cabinet-form"
+              style="margin-top:16px;" id="add-doctor-form" novalidate>
+            <div class="form-row-3">
+                <label><span>Имя <span class="req">*</span></span>
+                    <input type="text" name="first_name" placeholder="Иван" required>
+                    <span class="field-error"></span></label>
+                <label><span>Фамилия <span class="req">*</span></span>
+                    <input type="text" name="last_name" placeholder="Иванов" required>
+                    <span class="field-error"></span></label>
+                <label><span>Отчество</span>
+                    <input type="text" name="middle_name" placeholder="Иванович"></label>
+            </div>
+            <div class="form-row-2">
+                <label><span>Специализация</span>
+                    <input type="text" name="qualification" placeholder="Стоматолог-терапевт"></label>
+                <label><span>Стаж (лет)</span>
+                    <input type="number" name="experience" min="0" max="60" value="0" placeholder="0"></label>
+            </div>
+            <div class="form-row-2">
+                <label><span>Email <span class="req">*</span></span>
+                    <input type="email" name="email" placeholder="doctor@clinic.ru" required>
+                    <span class="field-error"></span></label>
+                <label><span>Телефон</span>
+                    <input type="tel" name="phone" placeholder="+7 (___) ___-__-__"></label>
+            </div>
+            {% if role == 'admin' %}
+            <label><span>Роль <span class="req">*</span></span>
+                <select name="role_override">
+                    <option value="doctor">Врач</option>
+                    <option value="manager">Менеджер</option>
+                    <option value="admin">Администратор</option>
+                </select>
+            </label>
+            {% endif %}
+            <label><span>Пароль (временный)</span>
+                <input type="password" name="password" placeholder="Минимум 6 символов"></label>
+            <button type="submit" class="btn btn-primary">Добавить сотрудника</button>
+        </form>
+    </details>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+const PAGE_SIZE = 10;
+
+// ── Пагинация пациентов ──────────────────────────────────────────────────────
+const patientsTbody      = document.getElementById('patients-tbody');
+const patientsSearch     = document.getElementById('patients-search');
+const patientsPagination = document.getElementById('patients-pagination');
+let patientsData = [];
+let currentPage  = 1;
+
+function renderPatientsPage(page) {
+    currentPage = page;
+    const start = (page - 1) * PAGE_SIZE;
+    const slice = patientsData.slice(start, start + PAGE_SIZE);
+    if (!slice.length) {
+        patientsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Пациентов не найдено.</td></tr>';
+    } else {
+        patientsTbody.innerHTML = slice.map((p, i) => `
+            <tr>
+                <td>${start + i + 1}</td>
+                <td><a href="/patient/${p.id}" class="patient-link">${p.name}</a></td>
+                <td>${p.phone}</td>
+                <td>${p.birth_date}</td>
+                <td>${p.visits}</td>
+                <td>${p.last_visit}</td>
+            </tr>`).join('');
+    }
+    renderPagination(patientsPagination, patientsData.length, page, renderPatientsPage);
+}
+
+function loadPatients(q) {
+    if (!patientsTbody) return;
+    const url = '/cabinet/patients' + (q ? '?q=' + encodeURIComponent(q) : '');
+    fetch(url).then(r => r.json()).then(data => {
+        patientsData = data;
+        renderPatientsPage(1);
+    }).catch(() => {
+        patientsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+    });
+}
+
+if (patientsTbody) loadPatients('');
+if (patientsSearch) {
+    let timer;
+    patientsSearch.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => loadPatients(patientsSearch.value), 350);
+    });
+}
+
+// ── Загрузка записей ─────────────────────────────────────────────────────────
+const apptsTbody     = document.getElementById('appts-tbody');
+const apptsSearch    = document.getElementById('appts-search');
+const apptsFilter    = document.getElementById('appts-status-filter');
+const apptsPagination = document.getElementById('appts-pagination');
+const STATUS_LABELS  = { scheduled: 'Запланирован', completed: 'Завершён', cancelled: 'Отменён' };
+const STATUS_CLASSES = { scheduled: 'appt-status-scheduled', completed: 'appt-status-completed', cancelled: 'appt-status-cancelled' };
+let apptsData = [];
+
+function renderApptsPage(page) {
+    const start = (page - 1) * PAGE_SIZE;
+    const slice = apptsData.slice(start, start + PAGE_SIZE);
+    if (!slice.length) {
+        apptsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Записей не найдено.</td></tr>';
+    } else {
+        apptsTbody.innerHTML = slice.map(a => `
+            <tr>
+                <td>${a.date}</td><td>${a.time || '—'}</td>
+                <td>${a.patient}</td><td>${a.doctor}</td><td>${a.service}</td>
+                <td><span class="appt-status ${STATUS_CLASSES[a.status] || ''}">${STATUS_LABELS[a.status] || a.status}</span></td>
+            </tr>`).join('');
+    }
+    if (apptsPagination) renderPagination(apptsPagination, apptsData.length, page, renderApptsPage);
+}
+
+function loadAppointments() {
+    if (!apptsTbody) return;
+    const q  = apptsSearch ? apptsSearch.value : '';
+    const st = apptsFilter ? apptsFilter.value : '';
+    let url = '/api/appointments?';
+    if (q)  url += 'q=' + encodeURIComponent(q) + '&';
+    if (st) url += 'status=' + st;
+    fetch(url).then(r => r.json()).then(data => {
+        apptsData = data;
+        renderApptsPage(1);
+    }).catch(() => {
+        apptsTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+    });
+}
+
+if (apptsTbody) loadAppointments();
+if (apptsSearch) {
+    let timer;
+    apptsSearch.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(loadAppointments, 350); });
+}
+if (apptsFilter) apptsFilter.addEventListener('change', loadAppointments);
+
+// ── Загрузка пользователей (admin) ───────────────────────────────────────────
+const usersTbody = document.getElementById('users-tbody');
+if (usersTbody) {
+    fetch('/api/users').then(r => r.json()).then(data => {
+        usersTbody.innerHTML = data.map((u, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td><strong>${u.name}</strong><br><small style="color:#5b6b67">${u.email}</small></td>
+                <td>${u.phone}</td>
+                <td><span class="role-badge role-${u.role}">${u.role_label}</span></td>
+                <td>${u.created}</td>
+                <td>
+                    <form method="post" action="/cabinet/user/${u.id}/delete"
+                          onsubmit="return confirm('Удалить пользователя ' + u.name + '?');" style="display:inline;">
+                        <button type="submit" class="btn-mini btn-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>`).join('');
+    }).catch(() => {
+        usersTbody.innerHTML = '<tr><td colspan="6" class="table-loading">Ошибка загрузки.</td></tr>';
+    });
+}
+
+// ── JS-валидация формы добавления врача ──────────────────────────────────────
+const addDoctorForm = document.getElementById('add-doctor-form');
+if (addDoctorForm) {
+    addDoctorForm.addEventListener('submit', function (e) {
+        let ok = true;
+        [['first_name','Введите имя'],['last_name','Введите фамилию'],['email','Введите email']].forEach(([name, msg]) => {
+            const inp = addDoctorForm.querySelector(`[name="${name}"]`);
+            const err = inp ? inp.nextElementSibling : null;
+            if (!inp) return;
+            const valid = inp.value.trim() && (name !== 'email' || inp.value.includes('@'));
+            if (!valid) { if (err?.classList.contains('field-error')) err.textContent = msg; inp.classList.add('input-invalid'); ok = false; }
+            else { if (err?.classList.contains('field-error')) err.textContent = ''; inp.classList.remove('input-invalid'); }
+        });
+        if (!ok) e.preventDefault();
+    });
+}
+
+function renderPagination(container, total, current, callback) {
+    if (!container) return;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (pages <= 1) { container.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 1; i <= pages; i++) {
+        html += `<button class="page-btn ${i === current ? 'page-btn-active' : ''}"
+                         onclick="(${callback.toString()})(${i})">${i}</button>`;
+    }
+    container.innerHTML = html;
+}
+</script>
+{% endblock %}

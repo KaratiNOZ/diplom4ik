@@ -1,0 +1,131 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}История лечения — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+{% set role = user.role %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>История лечения</h1>
+        <p class="cabinet-greeting">Полная история ваших визитов и проведённого лечения.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-history">
+    <div class="section-title-row">
+        <h2 class="cabinet-section-title"><svg><use href="#i-list"/></svg> История лечения</h2>
+        {% if histories %}
+        <button type="button" class="btn-mini btn-print" onclick="printHistory()" title="Печать / сохранить PDF">
+            <svg class="icon-sm"><use href="#i-print"/></svg> Печать / PDF
+        </button>
+        {% endif %}
+    </div>
+
+    {% if histories %}
+        <div class="history-list">
+            {% for h in histories %}
+            <div class="history-item">
+                <div class="history-date">{{ h.date }}</div>
+                <div class="history-body">
+                    <strong>{{ h.diagnosis }}</strong>
+                    <p>{{ h.treatment }}</p>
+                    {% if role != 'patient' %}
+                    <p class="history-meta">Пациент: {{ h.patient }}</p>
+                    {% endif %}
+                    <p class="history-meta">Врач: {{ h.doctor }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="cabinet-empty">История лечения пуста.</p>
+    {% endif %}
+
+    {% if role in ['doctor', 'manager', 'admin'] %}
+    <details class="cabinet-details" style="margin-top:24px;">
+        <summary class="cabinet-details-toggle">Добавить запись в историю</summary>
+        <form method="post" action="/cabinet/history/add" class="cabinet-form" style="margin-top:16px;">
+            <div class="form-row-2">
+                <label>
+                    <span>Пациент <span class="req">*</span></span>
+                    <select name="patient_id" required>
+                        <option value="">— выберите пациента —</option>
+                        {% for p in patients %}
+                        <option value="{{ p.id_patient }}">{{ p.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>Дата визита <span class="req">*</span></span>
+                    <input type="date" name="visit_date" required>
+                </label>
+            </div>
+            {% if role in ['manager', 'admin'] %}
+            <label>
+                <span>Врач</span>
+                <select name="doctor_id">
+                    <option value="">— выберите врача —</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.id_doctor }}">{{ d.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {% endif %}
+            <label>
+                <span>Диагноз <span class="req">*</span></span>
+                <input type="text" name="diagnosis" placeholder="Например: Средний кариес зуба 26" required>
+            </label>
+            <label>
+                <span>Лечение / Назначения</span>
+                <textarea name="treatment" rows="3" placeholder="Описание проведённого лечения..."></textarea>
+            </label>
+            <button type="submit" class="btn btn-primary">Добавить запись</button>
+        </form>
+    </details>
+    {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function printHistory() {
+    const section = document.querySelector('.history-list');
+    if (!section) return;
+    const printWin = window.open('', '_blank', 'width=800,height=600');
+    printWin.document.write(`
+        <!DOCTYPE html><html lang="ru"><head>
+        <meta charset="UTF-8">
+        <title>История лечения — ORDENTIST CLINIC</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 32px; color: #15302a; }
+            h1 { font-size: 20px; margin-bottom: 4px; }
+            .meta { color: #5b6b67; font-size: 13px; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th { background: #f4f8f7; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e1ebe7; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+            td { padding: 10px 12px; border-bottom: 1px solid #e1ebe7; vertical-align: top; }
+            tr:last-child td { border-bottom: none; }
+            @media print { body { padding: 16px; } }
+        </style></head><body>
+        <h1>История лечения</h1>
+        <p class="meta">ORDENTIST CLINIC · Распечатано: ${new Date().toLocaleDateString('ru-RU')}</p>
+        <table>
+            <thead><tr><th>Дата</th><th>Диагноз</th><th>Лечение</th><th>Врач</th></tr></thead>
+            <tbody>
+                ${Array.from(document.querySelectorAll('.history-item')).map(item => {
+                    const date  = item.querySelector('.history-date')?.textContent.trim() || '—';
+                    const diag  = item.querySelector('.history-body strong')?.textContent.trim() || '—';
+                    const treat = item.querySelector('.history-body p')?.textContent.trim() || '—';
+                    const meta  = Array.from(item.querySelectorAll('.history-meta')).map(m => m.textContent.trim()).join(' · ');
+                    return '<tr><td>' + date + '</td><td>' + diag + '</td><td>' + treat + '</td><td>' + meta + '</td></tr>';
+                }).join('')}
+            </tbody>
+        </table>
+        </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 400);
+}
+</script>
+{% endblock %}

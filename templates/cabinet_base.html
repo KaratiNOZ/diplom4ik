@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Личный кабинет — ORDENTIST CLINIC{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/cabinet.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="cabinet-page">
+    {% include '_icons.html' %}
+
+    {% set role = user.role %}
+
+    <div class="cabinet-layout">
+
+        {# ===== SIDEBAR ===== #}
+        <aside class="cabinet-sidebar" id="cabinet-sidebar">
+            <div class="sidebar-top-row">
+                <a href="/" class="cabinet-brand">
+                    <img src="/images/logo/logo.png" alt="">
+                    <span>ORDENTIST</span>
+                </a>
+                <button class="sidebar-close-btn" id="sidebar-close" aria-label="Закрыть меню">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <div class="cabinet-user">
+                <div class="cabinet-avatar">
+                    {{ (user.first_name[0] if user.first_name else 'U') ~ (user.last_name[0] if user.last_name else '') }}
+                </div>
+                <div class="cabinet-user-info">
+                    <strong>{{ user.last_name }} {{ user.first_name }}</strong>
+                    <span class="role-badge role-{{ role }}">
+                        <svg class="icon-xs"><use href="#i-user"/></svg>
+                        {{ user.role_label }}
+                    </span>
+                </div>
+            </div>
+
+            <nav class="cabinet-nav">
+                <a href="/cabinet" class="{% if active_page == 'dashboard' %}active{% endif %}">
+                    <svg><use href="#i-tooth"/></svg> Главная
+                </a>
+                <a href="/cabinet/profile" class="{% if active_page == 'profile' %}active{% endif %}">
+                    <svg><use href="#i-user"/></svg> Профиль
+                </a>
+                <a href="/cabinet/appointments" class="{% if active_page == 'appointments' %}active{% endif %}">
+                    <svg><use href="#i-calendar"/></svg> Мои записи
+                </a>
+                <a href="/cabinet/history" class="{% if active_page == 'history' %}active{% endif %}">
+                    <svg><use href="#i-list"/></svg> История лечения
+                </a>
+                {% if role == 'patient' %}
+                <a href="/cabinet/achievements" class="{% if active_page == 'achievements' %}active{% endif %}">
+                    <svg><use href="#i-trophy"/></svg> Достижения
+                </a>
+                {% endif %}
+                {% if role in ['manager', 'admin'] %}
+                <a href="/cabinet/manage" class="{% if active_page == 'manage' %}active{% endif %}">
+                    <svg><use href="#i-settings"/></svg> Управление
+                </a>
+                {% endif %}
+                <a href="/cabinet/prices" class="{% if active_page == 'prices' %}active{% endif %}">
+                    <svg><use href="#i-tag"/></svg> Прайс-лист
+                </a>
+                <a href="/cabinet/settings" class="{% if active_page == 'settings' %}active{% endif %}">
+                    <svg><use href="#i-settings"/></svg> Настройки
+                </a>
+                <a href="/logout" class="logout">
+                    <svg><use href="#i-logout"/></svg> Выйти
+                </a>
+            </nav>
+        </aside>
+
+        {# ===== MAIN ===== #}
+        <main class="cabinet-main">
+
+            {# Hamburger для мобильных #}
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Открыть меню">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Меню
+            </button>
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+            {# Flash-сообщения #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {# Уведомления #}
+            {% if notifications is defined and notifications %}
+            <div class="notifications-bar">
+                {% for n in notifications %}
+                <div class="notification notification-{{ n.type }}">
+                    <svg class="icon-sm"><use href="#i-clock"/></svg>
+                    {{ n.text }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block cabinet_content %}{% endblock %}
+
+        </main>
+    </div>
+
+    {% block scripts %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // ── Hamburger меню ───────────────────────────────────────────────────
+        const sidebar   = document.getElementById('cabinet-sidebar');
+        const hamburger = document.getElementById('hamburger-btn');
+        const overlay   = document.getElementById('sidebar-overlay');
+        const closeBtn  = document.getElementById('sidebar-close');
+
+        function openSidebar()  { sidebar.classList.add('sidebar-open'); overlay.classList.add('overlay-visible'); }
+        function closeSidebar() { sidebar.classList.remove('sidebar-open'); overlay.classList.remove('overlay-visible'); }
+
+        if (hamburger) hamburger.addEventListener('click', openSidebar);
+        if (closeBtn)  closeBtn.addEventListener('click', closeSidebar);
+        if (overlay)   overlay.addEventListener('click', closeSidebar);
+
+        document.querySelectorAll('.cabinet-nav a').forEach(a => {
+            a.addEventListener('click', () => { if (window.innerWidth < 900) closeSidebar(); });
+        });
+
+        // ── Автозакрытие flash-сообщений ─────────────────────────────────────
+        document.querySelectorAll('.flash').forEach(el => {
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transition = 'opacity 0.5s';
+                setTimeout(() => el.remove(), 500);
+            }, 5000);
+        });
+    });
+    </script>
+    {% endblock %}
+</body>
+</html>

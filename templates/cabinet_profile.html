@@ -1,0 +1,63 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Профиль — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+{% set role = user.role %}
+
+<header class="cabinet-header">
+    <div>
+        <h1>Профиль</h1>
+        <p class="cabinet-greeting">Ваши личные данные и контактная информация.</p>
+    </div>
+</header>
+
+<section class="cabinet-section section-profile">
+    <h2 class="cabinet-section-title"><svg><use href="#i-user"/></svg> Профиль</h2>
+
+    {% if role == 'doctor' %}
+    <div class="doctor-profile-photo">
+        <img src="/images/doctors/{{ user.photo or 'doctor_placeholder.png' }}"
+             alt="{{ user.last_name }}" class="profile-photo-img">
+        <form method="post" action="/cabinet/doctor/photo"
+              enctype="multipart/form-data" class="photo-upload-form">
+            <label class="photo-upload-btn">
+                <svg class="icon-sm"><use href="#i-settings"/></svg>
+                Сменить фото
+                <input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp"
+                       onchange="this.form.submit()" style="display:none;">
+            </label>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="profile-grid">
+        <div class="info-row"><span>ФИО</span><strong>{{ user.last_name }} {{ user.first_name }} {{ user.middle_name or '' }}</strong></div>
+        <div class="info-row"><span>Роль</span><strong>{{ user.role_label }}</strong></div>
+        <div class="info-row"><span>Телефон</span><strong>{{ user.phone or '—' }}</strong></div>
+        <div class="info-row"><span>E-mail</span><strong>{{ user.email or '—' }}</strong></div>
+        {% if role == 'doctor' and user.qualification %}
+        <div class="info-row"><span>Специализация</span><strong>{{ user.qualification }}</strong></div>
+        <div class="info-row"><span>Стаж</span><strong>{{ user.experience }} лет</strong></div>
+        {% endif %}
+    </div>
+
+    <details class="cabinet-details" style="margin-top:20px;">
+        <summary class="cabinet-details-toggle">Редактировать профиль</summary>
+        <form method="post" action="/cabinet/profile/edit" class="cabinet-form" style="margin-top:16px;">
+            <div class="form-row-3">
+                <label><span>Имя</span><input type="text" name="first_name" value="{{ user.first_name or '' }}"></label>
+                <label><span>Фамилия</span><input type="text" name="last_name" value="{{ user.last_name or '' }}"></label>
+                <label><span>Отчество</span><input type="text" name="middle_name" value="{{ user.middle_name or '' }}"></label>
+            </div>
+            <div class="form-row-2">
+                <label><span>Телефон</span><input type="tel" name="phone" value="{{ user.phone or '' }}"></label>
+                <label><span>E-mail</span><input type="email" name="email" value="{{ user.email or '' }}"></label>
+            </div>
+            {% if role == 'patient' %}
+            <label><span>Дата рождения</span><input type="date" name="birth_date"></label>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        </form>
+    </details>
+</section>
+{% endblock %}
