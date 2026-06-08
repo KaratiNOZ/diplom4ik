@@ -1,6 +1,5 @@
 """
 Конфигурация приложения.
-Поменяй USER/PASSWORD/DB_NAME под свою MySQL.
 """
 
 import os
@@ -21,4 +20,4 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # --- Flask ---
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+    SECRET_KEY = os.getenv("SECRET_KEY", "secret-key")

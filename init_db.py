@@ -225,22 +225,24 @@ def migrate_existing_tables():
 
 if __name__ == "__main__":
     with app.app_context():
-        print("Создание таблиц...")
+        print(" Создание таблиц...")
         db.create_all()
 
-        print("Миграция существующих таблиц...")
+        print(" Миграция существующих таблиц...")
         migrate_existing_tables()
 
-        print("Сидер услуг...")
+        print(" Сидер услуг...")
         seed_services()
 
-        print("Сидер ачивок...")
+        print(" Сидер ачивок...")
         seed_achievements()
 
-        print("Сидер кабинетов...")
+        print(" Сидер кабинетов...")
         seed_offices()
 
-        print("Сидер демо-юзеров...")
+        print(" Сидер демо-юзеров...")
         seed_demo_users()
 
-        print("\nГотово. Запускай: python app.py")
+        print("\n Готово! Теперь можно запускать app.py")
+
+
