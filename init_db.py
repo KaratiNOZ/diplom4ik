@@ -159,9 +159,11 @@ def seed_demo_users():
 
     # --- Врач 1 ---
     if not User.query.filter_by(email="doctor@demo.ru").first():
+        office = Office.query.first()
         doctor = Doctor(
             first_name="Иван", middle_name="Иванович", last_name="Иванов",
             qualification="Стоматолог-терапевт", experience=12,
+            office_id=office.id_office if office else None,
         )
         db.session.add(doctor)
         db.session.flush()
@@ -174,9 +176,11 @@ def seed_demo_users():
 
     # --- Врач 2 ---
     if not User.query.filter_by(email="doctor2@demo.ru").first():
+        office = Office.query.first()
         doctor2 = Doctor(
             first_name="Анна", middle_name="Сергеевна", last_name="Петрова",
             qualification="Ортодонт", experience=9,
+            office_id=office.id_office if office else None,
         )
         db.session.add(doctor2)
         db.session.flush()
@@ -211,8 +215,10 @@ def migrate_existing_tables():
             "ALTER TABLE appointments ADD COLUMN service_id INT NULL",
             "ALTER TABLE appointments ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'scheduled'",
             "ALTER TABLE doctors ADD COLUMN photo VARCHAR(200) NULL",
+            "ALTER TABLE doctors ADD COLUMN office_id INT NULL",
             "ALTER TABLE users ADD COLUMN reset_token VARCHAR(64) NULL",
             "ALTER TABLE users ADD COLUMN reset_token_exp DATETIME NULL",
+            "ALTER TABLE services ADD COLUMN qualifications VARCHAR(255) NULL",
         ]
         for sql in migrations:
             try:

@@ -480,7 +480,25 @@ def register_routes(app):
             return redirect(url_for("cabinet"))
         ctx = _cabinet_common_ctx(user)
         ctx["active_page"] = "manage"
+        if user.role == 'admin':
+            ctx['services'] = Service.query.order_by(Service.category, Service.name).all()
         return render_template("cabinet_manage.html", **ctx)
+
+
+    @app.route("/cabinet/schedule")
+    @login_required
+    @role_required("manager", "admin")
+    def cabinet_schedule():
+        user = current_user()
+        ctx = _cabinet_common_ctx(user)
+        doctors = Doctor.query.order_by(Doctor.last_name).all()
+        offices = Office.query.order_by(Office.office_number).all()
+        ctx.update({
+            "doctors": doctors,
+            "offices": offices,
+            "active_page": "schedule",
+        })
+        return render_template("cabinet_schedule.html", **ctx)
 
     @app.route("/cabinet/prices")
     @login_required
@@ -488,7 +506,19 @@ def register_routes(app):
         user = current_user()
         ctx = _cabinet_common_ctx(user)
         price_categories = {}
-        for s in Service.query.order_by(Service.category, Service.name).all():
+        services = Service.query.order_by(Service.category, Service.name).all()
+        def _visible(svc):
+            if user.role != 'doctor' or not user.doctor:
+                return True
+            qual = (user.doctor.qualification or "").lower()
+            allowed = (svc.qualifications or "").strip()
+            if not allowed:
+                return True
+            allowed_set = [q.strip().lower() for q in allowed.split(',') if q.strip()]
+            return qual in allowed_set
+        for s in services:
+            if not _visible(s):
+                continue
             cat = s.category or "Прочее"
             price_categories.setdefault(cat, []).append(s)
         ctx.update({
@@ -838,6 +868,9 @@ def register_routes(app):
     def api_appointments():
         q = request.args.get("q", "").strip()
         status = request.args.get("status", "")
+        doctor_id = request.args.get("doctor_id")
+        office_id = request.args.get("office_id")
+        appt_date = request.args.get("date")
         query = Appointment.query
         if status:
             query = query.filter_by(status=status)
@@ -850,6 +883,21 @@ def register_routes(app):
                     Doctor.last_name.ilike(like),
                 )
             )
+        # Дополнительные фильтры для просмотра расписания
+        if doctor_id:
+            try:
+                query = query.filter_by(doctor_id=int(doctor_id))
+            except Exception:
+                pass
+        if office_id:
+            try:
+                query = query.filter_by(office_id=int(office_id))
+            except Exception:
+                pass
+        if appt_date:
+            d = _parse_date(appt_date)
+            if d:
+                query = query.filter(Appointment.appointment_date == d)
         appts = query.order_by(Appointment.appointment_date.desc()).limit(50).all()
         return jsonify([_appt_to_dict(a) for a in appts])
 
@@ -897,6 +945,55 @@ def register_routes(app):
         name = doctor.full_name if doctor else email
         flash(f"Сотрудник {name} добавлен с ролью «{role_override}».", "success")
         return redirect(url_for("cabinet_manage"))
+
+
+    # ── Управление прайс-листом (только admin) ─────────────────────────────
+    @app.route('/cabinet/service/add', methods=['POST'])
+    @login_required
+    @role_required('admin')
+    def cabinet_service_add():
+        f = request.form
+        name = f.get('name', '').strip()
+        if not name:
+            flash('Название услуги обязательно.', 'error')
+            return redirect(url_for('cabinet_manage'))
+        try:
+            price = float(f.get('price') or 0)
+        except Exception:
+            price = 0
+        svc = Service(name=name, price=price, category=f.get('category') or None,
+                      qualifications=f.get('qualifications') or None)
+        db.session.add(svc)
+        db.session.commit()
+        flash('Услуга добавлена.', 'success')
+        return redirect(url_for('cabinet_manage'))
+
+    @app.route('/cabinet/service/<int:sid>/edit', methods=['POST'])
+    @login_required
+    @role_required('admin')
+    def cabinet_service_edit(sid):
+        svc = Service.query.get_or_404(sid)
+        f = request.form
+        svc.name = f.get('name') or svc.name
+        try:
+            svc.price = float(f.get('price') or svc.price or 0)
+        except Exception:
+            pass
+        svc.category = f.get('category') or svc.category
+        svc.qualifications = f.get('qualifications') or svc.qualifications
+        db.session.commit()
+        flash('Услуга обновлена.', 'success')
+        return redirect(url_for('cabinet_manage'))
+
+    @app.route('/cabinet/service/<int:sid>/delete', methods=['POST'])
+    @login_required
+    @role_required('admin')
+    def cabinet_service_delete(sid):
+        svc = Service.query.get_or_404(sid)
+        db.session.delete(svc)
+        db.session.commit()
+        flash('Услуга удалена.', 'success')
+        return redirect(url_for('cabinet_manage'))
 
     # ── Управление: удалить пользователя (только admin) ──────────────────────
 

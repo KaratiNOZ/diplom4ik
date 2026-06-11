@@ -72,6 +72,53 @@
     </div>
     {% endif %}
 
+    {% if role == 'admin' %}
+    <h3 class="manage-subtitle" style="margin-top:32px;">Прайс-лист клиники</h3>
+    <div class="table-wrapper" style="margin-bottom:16px;">
+        <table class="data-table">
+            <thead>
+                <tr><th>#</th><th>Название</th><th>Категория</th><th>Цена</th><th>Квалификации</th><th>Действие</th></tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.category or 'Прочее' }}</td>
+                    <td>{{ s.price or '—' }}</td>
+                    <td>{{ s.qualifications or 'Все' }}</td>
+                    <td>
+                        <form method="post" action="/cabinet/service/{{ s.id_service }}/delete" style="display:inline;">
+                            <button type="submit" class="btn-mini btn-danger" onclick="return confirm('Удалить услугу {{ s.name }}?')">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="manage-subtitle">Добавить / редактировать услугу</h4>
+    <details class="cabinet-details">
+        <summary class="cabinet-details-toggle">Открыть форму</summary>
+        <form method="post" action="/cabinet/service/add" class="cabinet-form" style="margin-top:16px;">
+            <div class="form-row-2">
+                <label><span>Название <span class="req">*</span></span>
+                    <input type="text" name="name" required></label>
+                <label><span>Цена</span>
+                    <input type="number" name="price" step="0.01"></label>
+            </div>
+            <div class="form-row-2">
+                <label><span>Категория</span>
+                    <input type="text" name="category"></label>
+                <label><span>Квалификации (через запятую)</span>
+                    <input type="text" name="qualifications" placeholder="Стоматолог-терапевт, Ортодонт"></label>
+            </div>
+            <button type="submit" class="btn btn-primary">Добавить услугу</button>
+        </form>
+    </details>
+    {% endif %}
+
     <h3 class="manage-subtitle">Добавить сотрудника</h3>
     <details class="cabinet-details">
         <summary class="cabinet-details-toggle">Открыть форму</summary>

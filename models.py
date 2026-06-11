@@ -76,6 +76,9 @@ class Doctor(db.Model):
     qualification = db.Column(db.String(100))
     experience = db.Column(db.Integer)
     photo = db.Column(db.String(200), nullable=True)  # имя файла в images/doctors/
+    office_id = db.Column(db.Integer, db.ForeignKey("offices.id_office"), nullable=True)
+
+    office = db.relationship("Office", back_populates="doctors")
 
     appointments = db.relationship("Appointment", back_populates="doctor")
     histories = db.relationship("MedicalHistory", back_populates="doctor")
@@ -118,6 +121,7 @@ class Office(db.Model):
     office_number = db.Column(db.Integer)
 
     appointments = db.relationship("Appointment", back_populates="office")
+    doctors = db.relationship("Doctor", back_populates="office")
 
     def __repr__(self):
         return f"<Office #{self.office_number}>"
@@ -131,6 +135,7 @@ class Service(db.Model):
     name = db.Column(db.String(150), nullable=False)
     price = db.Column(db.Numeric(10, 2))
     category = db.Column(db.String(80))
+    qualifications = db.Column(db.String(255), nullable=True)
 
     appointments = db.relationship("Appointment", back_populates="service")
 

@@ -1,0 +1,83 @@
+{% extends 'cabinet_base.html' %}
+{% block title %}Расписание — ORDENTIST CLINIC{% endblock %}
+
+{% block cabinet_content %}
+<header class="cabinet-header">
+    <div>
+        <h1>Расписание</h1>
+        <p class="cabinet-greeting">Просмотр расписания врачей по датам и кабинетам.</p>
+    </div>
+</header>
+
+<section class="cabinet-section">
+    <div class="form-row-3">
+        <label><span>Врач</span>
+            <select id="filter-doctor">
+                <option value="">Все</option>
+                {% for d in doctors %}
+                <option value="{{ d.id_doctor }}">{{ d.full_name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label><span>Кабинет</span>
+            <select id="filter-office">
+                <option value="">Все</option>
+                {% for o in offices %}
+                <option value="{{ o.id_office }}">Кабинет {{ o.office_number }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label><span>Дата</span>
+            <input type="date" id="filter-date" value="{{ ("" ) }}"></label>
+    </div>
+
+    <div class="table-wrapper" style="margin-top:16px;">
+        <table class="data-table">
+            <thead>
+                <tr><th>Дата</th><th>Время</th><th>Врач</th><th>Пациент</th><th>Кабинет</th><th>Услуга</th><th>Статус</th></tr>
+            </thead>
+            <tbody id="schedule-tbody">
+                <tr><td colspan="7" class="table-loading">Выберите фильтры и нажмите "Обновить".</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top:12px;">
+        <button id="btn-refresh" class="btn">Обновить</button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function renderRows(data) {
+    const tbody = document.getElementById('schedule-tbody');
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="table-loading">Записей не найдено.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(a => `
+        <tr>
+            <td>${a.date}</td><td>${a.time || '—'}</td>
+            <td>${a.doctor}</td><td>${a.patient}</td><td>${a.office}</td><td>${a.service}</td>
+            <td>${a.status}</td>
+        </tr>`).join('');
+}
+
+async function loadSchedule() {
+    const doctor = document.getElementById('filter-doctor').value;
+    const office = document.getElementById('filter-office').value;
+    const date = document.getElementById('filter-date').value;
+    let url = '/api/appointments?';
+    if (doctor) url += 'doctor_id=' + encodeURIComponent(doctor) + '&';
+    if (office)  url += 'office_id=' + encodeURIComponent(office) + '&';
+    if (date)    url += 'date=' + encodeURIComponent(date) + '&';
+    const res = await fetch(url);
+    if (!res.ok) { document.getElementById('schedule-tbody').innerHTML = '<tr><td colspan="7" class="table-loading">Ошибка загрузки.</td></tr>'; return; }
+    const data = await res.json();
+    renderRows(data);
+}
+
+document.getElementById('btn-refresh').addEventListener('click', loadSchedule);
+</script>
+{% endblock %}
